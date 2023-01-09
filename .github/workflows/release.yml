@@ -121,7 +121,7 @@ jobs:
           args: --release --target=${{ matrix.TARGET }}
 
       - name: "Package Release"
-        run: tar cvzf r53-ddns-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/release bookmark-cd
+        run: tar cvzf r53-ddns-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/release r53-ddns
 
       - name: "Generate SHA checksum"
         run: shasum -a 256 -U r53-ddns-${{ matrix.TARGET }}.tar.gz > r53-ddns-${{ matrix.TARGET }}.sha
