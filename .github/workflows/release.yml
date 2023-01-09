@@ -69,19 +69,19 @@ jobs:
           args: --release --target=${{ matrix.TARGET }}
 
       - name: "Package Release"
-        run: tar cvzf bcd-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/release bookmark-cd
+        run: tar cvzf r53-ddns-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/release r53-ddns
 
       - name: "Generate SHA checksum"
-        run: shasum -a 256 -U bcd-${{ matrix.TARGET }}.tar.gz > bcd-${{ matrix.TARGET }}.sha
+        run: shasum -a 256 -U r53-ddns-${{ matrix.TARGET }}.tar.gz > r53-ddns-${{ matrix.TARGET }}.sha
 
       - name: "Generate MD5 checksum"
-        run: md5sum --tag bcd-${{ matrix.TARGET }}.tar.gz > bcd-${{ matrix.TARGET }}.md5
+        run: md5sum --tag r53-ddns-${{ matrix.TARGET }}.tar.gz > r53-ddns-${{ matrix.TARGET }}.md5
 
       - name: "Upload the artifact with the workflow run"
         uses: actions/upload-artifact@v3
         with:
-          name: bcd-${{ matrix.TARGET }}-${{ github.ref_name }}
-          path: bcd-${{ matrix.TARGET }}.*
+          name: r53-ddns-${{ matrix.TARGET }}-${{ github.ref_name }}
+          path: r53-ddns-${{ matrix.TARGET }}.*
           retention-days: 1
 
   # Build the MacOS release artifacts
@@ -121,19 +121,19 @@ jobs:
           args: --release --target=${{ matrix.TARGET }}
 
       - name: "Package Release"
-        run: tar cvzf bcd-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/release bookmark-cd
+        run: tar cvzf r53-ddns-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/release bookmark-cd
 
       - name: "Generate SHA checksum"
-        run: shasum -a 256 -U bcd-${{ matrix.TARGET }}.tar.gz > bcd-${{ matrix.TARGET }}.sha
+        run: shasum -a 256 -U r53-ddns-${{ matrix.TARGET }}.tar.gz > r53-ddns-${{ matrix.TARGET }}.sha
 
       - name: "Generate MD5 checksum"
-        run: md5 bcd-${{ matrix.TARGET }}.tar.gz > bcd-${{ matrix.TARGET }}.md5
+        run: md5 r53-ddns-${{ matrix.TARGET }}.tar.gz > r53-ddns-${{ matrix.TARGET }}.md5
 
       - name: "Upload the artifact with the workflow run"
         uses: actions/upload-artifact@v3
         with:
-          name: bcd-${{ matrix.TARGET }}-${{ github.ref_name }}
-          path: bcd-${{ matrix.TARGET }}.*
+          name: r53-ddns-${{ matrix.TARGET }}-${{ github.ref_name }}
+          path: r53-ddns-${{ matrix.TARGET }}.*
           retention-days: 1
 
   # Publishing to crates.io - this will be skipped if the tag as a '-' in it for testing purposes
@@ -176,9 +176,9 @@ jobs:
           prerelease: false
           files: |
             LICENSE
-            **/bcd-*.*
+            **/r53-ddns-*.*
 
-  # Kick off the workflow in the tap repo (a1ecbr0wn/homebrew-bcd) that will generate the homebrew formula 
+  # Kick off the workflow in the tap repo (a1ecbr0wn/homebrew-r53-ddns) that will generate the homebrew formula 
   # generate-formula:
   #   name: "Initiate the generation of homebrew formula"
   #   runs-on: ubuntu-latest
@@ -193,7 +193,7 @@ jobs:
   #         workflow: tap.yml
   #         inputs: '{ "tap_version": "${{ github.ref_name }}" }'
 
-  # Kick off the workflow in the snap repo (a1ecbr0wn/snapcraft-bcd) that will generate the snapcraft yaml file 
+  # Kick off the workflow in the snap repo (a1ecbr0wn/snapcraft-r53-ddns) that will generate the snapcraft yaml file 
   # generate-snap:
   #   name: "Initiate the generation of the snapcraft yaml file"
   #   runs-on: ubuntu-latest
