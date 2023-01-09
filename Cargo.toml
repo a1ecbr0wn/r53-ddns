@@ -20,8 +20,8 @@ name = "r53-ddns"
 clap = { version = "4.0", features = ["derive"] }
 futures = "0.3.25"
 lazy_static = "1.4.0"
-reqwest = { version = "0.11", features = ["rustls-tls"] }
 regex = "1.7.0"
-rusoto_core = "0.48"
-rusoto_route53 = "0.48"
+reqwest = { version = "0.11", default_features=false, features = ["rustls-tls"] }
+rusoto_core = { version="0.48", default_features=false, features=["rustls"] }
+rusoto_route53 = { version="0.48", default_features=false, features=["rustls"] }
 tokio = { version = "1", features = ["full"] }
