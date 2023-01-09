@@ -1,0 +1,27 @@
+[package]
+name = "r53-ddns"
+version = "0.1.0"
+edition = "2021"
+authors = ["Alec Brown <alec@noser.net>"]
+description = "Set a dns record for the server in an AWS Route53 domain record."
+license = "Apache-2.0"
+repository = "https://github.com/a1ecbr0wn/r53-ddns"
+readme = "README.md"
+keywords = ["utility"]
+categories = ["networking"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+path = "src/main.rs"
+name = "r53-ddns"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+futures = "0.3.25"
+lazy_static = "1.4.0"
+reqwest = "0.11"
+regex = "1.7.0"
+rusoto_core = "0.48"
+rusoto_route53 = "0.48"
+tokio = { version = "1", features = ["full"] }
