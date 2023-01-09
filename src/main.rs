@@ -22,18 +22,18 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
 
     let options = cli::Options::parse();
     let verbose = options.verbose;
+    let nat = options.nat;
     if options.server.is_some() && options.domain.is_some() {
-        let host_name = options.server.unwrap();
-        let zone_name = options.domain.unwrap();
+        let mut host_name = options.server.unwrap();
+        let mut zone_name = options.domain.unwrap();
         if is_valid_hostname(&host_name) {
-            let mut host_name = host_name.to_string();
             if !host_name.ends_with('.') {
                 host_name += ".";
             }
-            let mut zone_name = zone_name.to_string();
             if !zone_name.ends_with('.') {
                 zone_name += ".";
             }
+            let dns_name = format!("{host_name}{zone_name}");
             if verbose {
                 println!(
                     "server:        {}\ndomain:        {}",
@@ -44,7 +44,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             let client = Route53Client::new(Region::UsEast1);
             let zone_id = get_zone_id(&client, &zone_name).await;
             let external_ip_future = get_external_ip_address();
-            let dns_ip_future = get_ip_record(&client, &zone_id, &zone_name, &host_name);
+            let dns_ip_future = get_dns_record(&client, &zone_id, &zone_name, &host_name, "A");
             let ((external_ip_address, external_address_svc), dns_ip_address) =
                 join!(external_ip_future, dns_ip_future);
             if verbose {
@@ -61,16 +61,48 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
                     && !dns_ip_address.is_empty()
                     && !external_ip_address.is_empty()
                 {
-                    println!("{host_name}{zone_name} ip address has changed from {dns_ip_address} to {external_ip_address}");
-                    set_resource_record(
+                    println!("{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}");
+                    set_dns_record(
                         &client,
-                        zone_id,
-                        zone_name,
-                        host_name,
-                        "A".to_string(),
-                        external_ip_address,
+                        &zone_id,
+                        &zone_name,
+                        &host_name,
+                        "A",
+                        &external_ip_address,
                     )
                     .await;
+                }
+            } else if !external_ip_address.is_empty() {
+                println!("{dns_name} ip address is {external_ip_address}");
+                set_dns_record(
+                    &client,
+                    &zone_id,
+                    &zone_name,
+                    &host_name,
+                    "A",
+                    &external_ip_address,
+                )
+                .await;
+            }
+            if nat {
+                let nat_host_name = "\\052.".to_string() + &host_name;
+                let dns_nat_cname =
+                    get_dns_record(&client, &zone_id, &zone_name, &nat_host_name, "CNAME").await;
+                if dns_nat_cname.is_none()
+                    || (dns_nat_cname.is_some() && dns_nat_cname.clone().unwrap() != dns_name)
+                {
+                    if verbose {
+                        println!("{nat_host_name}{zone_name} nat CNAME set to {dns_name}");
+                    }
+                    set_dns_record(
+                        &client,
+                        &zone_id,
+                        &zone_name,
+                        &nat_host_name,
+                        "CNAME",
+                        dns_name.as_str(),
+                    )
+                    .await
                 }
             }
         } else if verbose {
@@ -175,26 +207,33 @@ async fn get_http_resp(address: &str) -> Result<(String, String), ()> {
 }
 
 /// Lists the ip address of a given zone/host A record
-async fn get_ip_record(
+async fn get_dns_record(
     client: &Route53Client,
     zone_id: &str,
     zone_name: &str,
     host_name: &str,
+    record_type: &str,
 ) -> Option<String> {
-    let record_name = format!("{}{}", host_name, zone_name);
+    let dns_name = format!("{host_name}{zone_name}");
     let request = ListResourceRecordSetsRequest {
         hosted_zone_id: zone_id.to_string(),
-        start_record_name: Some(record_name.clone()),
+        start_record_name: Some(dns_name.clone()),
         ..Default::default()
     };
+    // println!("request = {:?}", request);
     if let Ok(response) = client.list_resource_record_sets(request).await {
+        // println!("response = {:?}", response);
         let record_sets = response.resource_record_sets;
         for record_set in record_sets {
-            if record_set.name == record_name {
+            if record_set.name == dns_name && record_set.type_ == *record_type {
                 if let Some(records) = &record_set.resource_records {
                     if let Some(record) = records.first() {
                         let ip_record = record.value.clone();
-                        if ip_record.parse::<IpAddr>().is_ok() {
+                        if record_type == "A" {
+                            if ip_record.parse::<IpAddr>().is_ok() {
+                                return Some(ip_record);
+                            }
+                        } else {
                             return Some(ip_record);
                         }
                     }
@@ -206,27 +245,28 @@ async fn get_ip_record(
 }
 
 /// Creates resource records in the given hosted zone
-async fn set_resource_record(
+async fn set_dns_record(
     client: &Route53Client,
-    zone_id: String,
-    zone_name: String,
-    host_name: String,
-    record_type: String,
-    record_value: String,
+    zone_id: &str,
+    zone_name: &str,
+    host_name: &str,
+    record_type: &str,
+    record_value: &str,
 ) {
     // Build the request to change the resource record sets
+    let dns_name = format!("{host_name}{zone_name}");
     let request = ChangeResourceRecordSetsRequest {
-        hosted_zone_id: zone_id,
+        hosted_zone_id: zone_id.to_string(),
         change_batch: ChangeBatch {
             changes: vec![Change {
                 action: String::from("UPSERT"),
                 resource_record_set: ResourceRecordSet {
-                    name: format!("{host_name}{zone_name}"),
+                    name: dns_name,
                     resource_records: Some(vec![ResourceRecord {
-                        value: record_value,
+                        value: record_value.to_string(),
                     }]),
                     ttl: Some(300),
-                    type_: record_type,
+                    type_: record_type.to_string(),
                     ..Default::default()
                 },
             }],
