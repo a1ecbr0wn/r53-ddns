@@ -145,7 +145,9 @@ async fn get_external_ip_address() -> (String, String) {
         "whatismyip.akamai.com",
         "myip.dnsomatic.com/",
         "diagnostic.opendns.com/myip",
-    ].iter().map(|x| get_http_resp(x));
+    ]
+    .iter()
+    .map(|x| get_http_resp(x));
     futures.extend(addresses);
     for _ in 1..futures.len() {
         select! {
@@ -164,7 +166,7 @@ async fn get_http_resp(address: &str) -> Result<(String, String), ()> {
     if let Ok(resp) = client.get(format!("https://{address}")).send().await {
         if let Ok(response) = resp.text().await {
             let response = response.trim().to_string();
-            if let Ok(_) = response.parse::<IpAddr>() {
+            if response.parse::<IpAddr>().is_ok() {
                 return Ok((response, address.to_string()));
             }
         }
@@ -192,7 +194,7 @@ async fn get_ip_record(
                 if let Some(records) = &record_set.resource_records {
                     if let Some(record) = records.first() {
                         let ip_record = record.value.clone();
-                        if let Ok(_) = ip_record.parse::<IpAddr>() {
+                        if ip_record.parse::<IpAddr>().is_ok() {
                             return Some(ip_record);
                         }
                     }
