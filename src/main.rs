@@ -21,7 +21,7 @@ use rusoto_route53::{
     Change, ChangeBatch, ChangeResourceRecordSetsRequest, ListHostedZonesRequest,
     ListResourceRecordSetsRequest, ResourceRecord, ResourceRecordSet, Route53, Route53Client,
 };
-use tokio::{join, select};
+use tokio::{join, select, time::{sleep, Duration}};
 
 #[tokio::main]
 async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
@@ -30,6 +30,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     };
 
     let options = cli::Options::parse();
+    let check_freq = options.check;
     // logging
     let verbose = options.verbose;
     let stdout = ConsoleAppender::builder()
@@ -81,67 +82,18 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             if !zone_name.ends_with('.') {
                 zone_name += ".";
             }
-            let dns_name = format!("{host_name}{zone_name}");
             info!("server:        {}", host_name.clone());
             info!("domain:        {}", zone_name.clone());
             let client = Route53Client::new(Region::UsEast1);
             let zone_id = get_zone_id(&client, &zone_name).await;
-            let external_ip_future = get_external_ip_address();
-            let dns_ip_future = get_dns_record(&client, &zone_id, &zone_name, &host_name, "A");
-            let ((external_ip_address, external_address_svc), dns_ip_address) =
-                join!(external_ip_future, dns_ip_future);
             info!("zone id:       {zone_id}");
-            if !external_ip_address.is_empty() {
-                info!("external ip:   {external_ip_address}  (from {external_address_svc})");
+
+            if check_freq == 0 {
+                ddns_check(&client, &zone_id, &zone_name, &host_name, nat).await;
             } else {
-                warn!("external ip:   not found");
-            }
-            if let Some(dns_ip_address) = dns_ip_address {
-                info!("dns ip:        {dns_ip_address}");
-                if dns_ip_address != external_ip_address
-                    && !dns_ip_address.is_empty()
-                    && !external_ip_address.is_empty()
-                {
-                    warn!("{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}");
-                    set_dns_record(
-                        &client,
-                        &zone_id,
-                        &zone_name,
-                        &host_name,
-                        "A",
-                        &external_ip_address,
-                    )
-                    .await;
-                }
-            } else if !external_ip_address.is_empty() {
-                warn!("{dns_name} ip address is {external_ip_address}");
-                set_dns_record(
-                    &client,
-                    &zone_id,
-                    &zone_name,
-                    &host_name,
-                    "A",
-                    &external_ip_address,
-                )
-                .await;
-            }
-            if nat {
-                let nat_host_name = "\\052.".to_string() + &host_name;
-                let dns_nat_cname =
-                    get_dns_record(&client, &zone_id, &zone_name, &nat_host_name, "CNAME").await;
-                if dns_nat_cname.is_none()
-                    || (dns_nat_cname.is_some() && dns_nat_cname.clone().unwrap() != dns_name)
-                {
-                    info!("{nat_host_name}{zone_name} nat CNAME set to {dns_name}");
-                    set_dns_record(
-                        &client,
-                        &zone_id,
-                        &zone_name,
-                        &nat_host_name,
-                        "CNAME",
-                        dns_name.as_str(),
-                    )
-                    .await
+                loop {
+                    ddns_check(&client, &zone_id, &zone_name, &host_name, nat).await;
+                    sleep(Duration::from_millis(1000 * check_freq)).await;
                 }
             }
         } else {
@@ -159,6 +111,73 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     }
 
     Ok(())
+}
+
+async fn ddns_check(
+    client: &Route53Client,
+    zone_id: &str,
+    zone_name: &str,
+    host_name: &str,
+    nat: bool
+) {
+    let dns_name = format!("{host_name}{zone_name}");
+    let external_ip_future = get_external_ip_address();
+    let dns_ip_future = get_dns_record(&client, &zone_id, &zone_name, &host_name, "A");
+    let ((external_ip_address, external_address_svc), dns_ip_address) =
+        join!(external_ip_future, dns_ip_future);
+    if !external_ip_address.is_empty() {
+        info!("external ip:   {external_ip_address}  (from {external_address_svc})");
+    } else {
+        warn!("external ip:   not found");
+    }
+    if let Some(dns_ip_address) = dns_ip_address {
+        info!("dns ip:        {dns_ip_address}");
+        if dns_ip_address != external_ip_address
+            && !dns_ip_address.is_empty()
+            && !external_ip_address.is_empty()
+        {
+            warn!("{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}");
+            set_dns_record(
+                &client,
+                &zone_id,
+                &zone_name,
+                &host_name,
+                "A",
+                &external_ip_address,
+            )
+            .await;
+        }
+    } else if !external_ip_address.is_empty() {
+        warn!("{dns_name} ip address is {external_ip_address}");
+        set_dns_record(
+            &client,
+            &zone_id,
+            &zone_name,
+            &host_name,
+            "A",
+            &external_ip_address,
+        )
+        .await;
+    }
+    if nat {
+        let nat_host_name = "\\052.".to_string() + &host_name;
+        let dns_nat_cname =
+            get_dns_record(&client, &zone_id, &zone_name, &nat_host_name, "CNAME").await;
+        if dns_nat_cname.is_none()
+            || (dns_nat_cname.is_some() && dns_nat_cname.clone().unwrap() != dns_name)
+        {
+            info!("{nat_host_name}{zone_name} nat CNAME set to {dns_name}");
+            set_dns_record(
+                &client,
+                &zone_id,
+                &zone_name,
+                &nat_host_name,
+                "CNAME",
+                dns_name.as_str(),
+            )
+            .await
+        }
+    }
 }
 
 /// This function checks to see whether the host_name entered into the zone and cname tags is a valid host_name.
