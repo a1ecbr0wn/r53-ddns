@@ -21,7 +21,10 @@ use rusoto_route53::{
     Change, ChangeBatch, ChangeResourceRecordSetsRequest, ListHostedZonesRequest,
     ListResourceRecordSetsRequest, ResourceRecord, ResourceRecordSet, Route53, Route53Client,
 };
-use tokio::{join, select, time::{sleep, Duration}};
+use tokio::{
+    join, select,
+    time::{sleep, Duration},
+};
 
 #[tokio::main]
 async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
@@ -118,7 +121,7 @@ async fn ddns_check(
     zone_id: &str,
     zone_name: &str,
     host_name: &str,
-    nat: bool
+    nat: bool,
 ) {
     let dns_name = format!("{host_name}{zone_name}");
     let external_ip_future = get_external_ip_address();
@@ -136,7 +139,9 @@ async fn ddns_check(
             && !dns_ip_address.is_empty()
             && !external_ip_address.is_empty()
         {
-            warn!("{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}");
+            warn!(
+                "{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}"
+            );
             set_dns_record(
                 &client,
                 &zone_id,
