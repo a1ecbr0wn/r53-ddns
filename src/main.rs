@@ -36,8 +36,12 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         .encoder(Box::new(PatternEncoder::new("{m}{n}")))
         .build();
     let rolling_policy = CompoundPolicy::new(
-        Box::new(SizeTrigger::new(1024 * 5)),
-        Box::new(FixedWindowRoller::builder().build("log{}", 5).unwrap()),
+        Box::new(SizeTrigger::new(1024 * 1024 * 4)), // 4mb
+        Box::new(
+            FixedWindowRoller::builder()
+                .build("/var/tmp/r53-ddns.{}.log", 10)
+                .unwrap(),
+        ),
     );
     let to_file = RollingFileAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{d} - {m}{n}")))
