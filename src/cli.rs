@@ -22,7 +22,11 @@ pub struct Options {
     #[arg(short, long, value_parser, display_order(4), default_value_t = false)]
     pub verbose: bool,
 
+    /// check frequency in seconds for continuous checking
+    #[arg(short, long, value_parser, display_order(5), default_value_t = 0)]
+    pub check: u64,
+
     /// print version information
-    #[arg(short = 'V', long, value_parser, display_order(5))]
+    #[arg(short = 'V', long, value_parser, display_order(6))]
     pub version: bool,
 }

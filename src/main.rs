@@ -6,13 +6,22 @@ use clap::Parser;
 use futures::stream::{FuturesUnordered, StreamExt};
 use lazy_static::lazy_static;
 use log::{error, info, warn, LevelFilter};
+use log::{error, info, warn, LevelFilter};
+use log4rs::append::console::ConsoleAppender;
 use log4rs::append::console::ConsoleAppender;
 use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
+use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
+use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
 use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
 use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
+use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
+use log4rs::append::rolling_file::RollingFileAppender;
 use log4rs::append::rolling_file::RollingFileAppender;
 use log4rs::config::{Appender, Config, Root};
+use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
+use log4rs::encode::pattern::PatternEncoder;
+use log4rs::filter::threshold::ThresholdFilter;
 use log4rs::filter::threshold::ThresholdFilter;
 use regex::Regex;
 use reqwest::Client;
@@ -21,7 +30,10 @@ use rusoto_route53::{
     Change, ChangeBatch, ChangeResourceRecordSetsRequest, ListHostedZonesRequest,
     ListResourceRecordSetsRequest, ResourceRecord, ResourceRecordSet, Route53, Route53Client,
 };
-use tokio::{join, select};
+use tokio::{
+    join, select,
+    time::{sleep, Duration},
+};
 
 #[tokio::main]
 async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
@@ -30,8 +42,47 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     };
 
     let options = cli::Options::parse();
+    let check_freq = options.check;
     // logging
     let verbose = options.verbose;
+    let stdout = ConsoleAppender::builder()
+        .encoder(Box::new(PatternEncoder::new("{m}{n}")))
+        .build();
+    let rolling_policy = CompoundPolicy::new(
+        Box::new(SizeTrigger::new(1024 * 1024 * 4)), // 4mb
+        Box::new(
+            FixedWindowRoller::builder()
+                .build("/var/tmp/r53-ddns.{}.log", 10)
+                .unwrap(),
+        ),
+    );
+    let to_file = RollingFileAppender::builder()
+        .encoder(Box::new(PatternEncoder::new("{d} - {m}{n}")))
+        .build("/var/tmp/r53-ddns.log", Box::new(rolling_policy))
+        .unwrap();
+    let console_level = if verbose {
+        LevelFilter::Info
+    } else {
+        LevelFilter::Warn
+    };
+    if pshell::find().is_some() {
+        let config = Config::builder()
+            .appender(
+                Appender::builder()
+                    .filter(Box::new(ThresholdFilter::new(console_level)))
+                    .build("stdout", Box::new(stdout)),
+            )
+            .appender(Appender::builder().build("to_file", Box::new(to_file)))
+            .build(
+                Root::builder()
+                    .appender("stdout")
+                    .appender("to_file")
+                    .build(LevelFilter::Info),
+            )
+            .unwrap();
+        let _handle = log4rs::init_config(config).unwrap();
+    }
+
     let stdout = ConsoleAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{m}{n}")))
         .build();
@@ -81,67 +132,18 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             if !zone_name.ends_with('.') {
                 zone_name += ".";
             }
-            let dns_name = format!("{host_name}{zone_name}");
             info!("server:        {}", host_name.clone());
             info!("domain:        {}", zone_name.clone());
             let client = Route53Client::new(Region::UsEast1);
             let zone_id = get_zone_id(&client, &zone_name).await;
-            let external_ip_future = get_external_ip_address();
-            let dns_ip_future = get_dns_record(&client, &zone_id, &zone_name, &host_name, "A");
-            let ((external_ip_address, external_address_svc), dns_ip_address) =
-                join!(external_ip_future, dns_ip_future);
             info!("zone id:       {zone_id}");
-            if !external_ip_address.is_empty() {
-                info!("external ip:   {external_ip_address}  (from {external_address_svc})");
+
+            if check_freq == 0 {
+                ddns_check(&client, &zone_id, &zone_name, &host_name, nat).await;
             } else {
-                warn!("external ip:   not found");
-            }
-            if let Some(dns_ip_address) = dns_ip_address {
-                info!("dns ip:        {dns_ip_address}");
-                if dns_ip_address != external_ip_address
-                    && !dns_ip_address.is_empty()
-                    && !external_ip_address.is_empty()
-                {
-                    warn!("{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}");
-                    set_dns_record(
-                        &client,
-                        &zone_id,
-                        &zone_name,
-                        &host_name,
-                        "A",
-                        &external_ip_address,
-                    )
-                    .await;
-                }
-            } else if !external_ip_address.is_empty() {
-                warn!("{dns_name} ip address is {external_ip_address}");
-                set_dns_record(
-                    &client,
-                    &zone_id,
-                    &zone_name,
-                    &host_name,
-                    "A",
-                    &external_ip_address,
-                )
-                .await;
-            }
-            if nat {
-                let nat_host_name = "\\052.".to_string() + &host_name;
-                let dns_nat_cname =
-                    get_dns_record(&client, &zone_id, &zone_name, &nat_host_name, "CNAME").await;
-                if dns_nat_cname.is_none()
-                    || (dns_nat_cname.is_some() && dns_nat_cname.clone().unwrap() != dns_name)
-                {
-                    info!("{nat_host_name}{zone_name} nat CNAME set to {dns_name}");
-                    set_dns_record(
-                        &client,
-                        &zone_id,
-                        &zone_name,
-                        &nat_host_name,
-                        "CNAME",
-                        dns_name.as_str(),
-                    )
-                    .await
+                loop {
+                    ddns_check(&client, &zone_id, &zone_name, &host_name, nat).await;
+                    sleep(Duration::from_millis(1000 * check_freq)).await;
                 }
             }
         } else {
@@ -159,6 +161,75 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     }
 
     Ok(())
+}
+
+async fn ddns_check(
+    client: &Route53Client,
+    zone_id: &str,
+    zone_name: &str,
+    host_name: &str,
+    nat: bool,
+) {
+    let dns_name = format!("{host_name}{zone_name}");
+    let external_ip_future = get_external_ip_address();
+    let dns_ip_future = get_dns_record(&client, &zone_id, &zone_name, &host_name, "A");
+    let ((external_ip_address, external_address_svc), dns_ip_address) =
+        join!(external_ip_future, dns_ip_future);
+    if !external_ip_address.is_empty() {
+        info!("external ip:   {external_ip_address}  (from {external_address_svc})");
+    } else {
+        warn!("external ip:   not found");
+    }
+    if let Some(dns_ip_address) = dns_ip_address {
+        info!("dns ip:        {dns_ip_address}");
+        if dns_ip_address != external_ip_address
+            && !dns_ip_address.is_empty()
+            && !external_ip_address.is_empty()
+        {
+            warn!(
+                "{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}"
+            );
+            set_dns_record(
+                &client,
+                &zone_id,
+                &zone_name,
+                &host_name,
+                "A",
+                &external_ip_address,
+            )
+            .await;
+        }
+    } else if !external_ip_address.is_empty() {
+        warn!("{dns_name} ip address is {external_ip_address}");
+        set_dns_record(
+            &client,
+            &zone_id,
+            &zone_name,
+            &host_name,
+            "A",
+            &external_ip_address,
+        )
+        .await;
+    }
+    if nat {
+        let nat_host_name = "\\052.".to_string() + &host_name;
+        let dns_nat_cname =
+            get_dns_record(&client, &zone_id, &zone_name, &nat_host_name, "CNAME").await;
+        if dns_nat_cname.is_none()
+            || (dns_nat_cname.is_some() && dns_nat_cname.clone().unwrap() != dns_name)
+        {
+            info!("{nat_host_name}{zone_name} nat CNAME set to {dns_name}");
+            set_dns_record(
+                &client,
+                &zone_id,
+                &zone_name,
+                &nat_host_name,
+                "CNAME",
+                dns_name.as_str(),
+            )
+            .await
+        }
+    }
 }
 
 /// This function checks to see whether the host_name entered into the zone and cname tags is a valid host_name.
@@ -213,7 +284,7 @@ async fn get_external_ip_address() -> (String, String) {
         "myexternalip.com/raw",
         "ipecho.net/plain",
         "checkip.amazonaws.com",
-        "myip.dnsomatic.com",
+        "myip.dnsomatic.com/",
         "diagnostic.opendns.com/myip",
     ]
     .iter()
