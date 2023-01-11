@@ -14,6 +14,15 @@ use log4rs::append::rolling_file::RollingFileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::filter::threshold::ThresholdFilter;
+use log::{error, info, warn, LevelFilter};
+use log4rs::append::console::ConsoleAppender;
+use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
+use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
+use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
+use log4rs::append::rolling_file::RollingFileAppender;
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
+use log4rs::filter::threshold::ThresholdFilter;
 use regex::Regex;
 use reqwest::Client;
 use rusoto_core::{Region, RusotoError};
@@ -36,6 +45,44 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     let check_freq = options.check;
     // logging
     let verbose = options.verbose;
+    let stdout = ConsoleAppender::builder()
+        .encoder(Box::new(PatternEncoder::new("{m}{n}")))
+        .build();
+    let rolling_policy = CompoundPolicy::new(
+        Box::new(SizeTrigger::new(1024 * 1024 * 4)), // 4mb
+        Box::new(
+            FixedWindowRoller::builder()
+                .build("/var/tmp/r53-ddns.{}.log", 10)
+                .unwrap(),
+        ),
+    );
+    let to_file = RollingFileAppender::builder()
+        .encoder(Box::new(PatternEncoder::new("{d} - {m}{n}")))
+        .build("/var/tmp/r53-ddns.log", Box::new(rolling_policy))
+        .unwrap();
+    let console_level = if verbose {
+        LevelFilter::Info
+    } else {
+        LevelFilter::Warn
+    };
+    if pshell::find().is_some() {
+        let config = Config::builder()
+            .appender(
+                Appender::builder()
+                    .filter(Box::new(ThresholdFilter::new(console_level)))
+                    .build("stdout", Box::new(stdout)),
+            )
+            .appender(Appender::builder().build("to_file", Box::new(to_file)))
+            .build(
+                Root::builder()
+                    .appender("stdout")
+                    .appender("to_file")
+                    .build(LevelFilter::Info),
+            )
+            .unwrap();
+        let _handle = log4rs::init_config(config).unwrap();
+    }
+
     let stdout = ConsoleAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{m}{n}")))
         .build();
@@ -237,7 +284,7 @@ async fn get_external_ip_address() -> (String, String) {
         "myexternalip.com/raw",
         "ipecho.net/plain",
         "checkip.amazonaws.com",
-        "myip.dnsomatic.com",
+        "myip.dnsomatic.com/",
         "diagnostic.opendns.com/myip",
     ]
     .iter()
