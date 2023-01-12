@@ -56,23 +56,21 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     } else {
         LevelFilter::Warn
     };
-    if pshell::find().is_some() {
-        let config = Config::builder()
-            .appender(
-                Appender::builder()
-                    .filter(Box::new(ThresholdFilter::new(console_level)))
-                    .build("stdout", Box::new(stdout)),
-            )
-            .appender(Appender::builder().build("to_file", Box::new(to_file)))
-            .build(
-                Root::builder()
-                    .appender("stdout")
-                    .appender("to_file")
-                    .build(LevelFilter::Info),
-            )
-            .unwrap();
-        let _handle = log4rs::init_config(config).unwrap();
-    }
+    let config = Config::builder()
+        .appender(
+            Appender::builder()
+                .filter(Box::new(ThresholdFilter::new(console_level)))
+                .build("stdout", Box::new(stdout)),
+        )
+        .appender(Appender::builder().build("to_file", Box::new(to_file)))
+        .build(
+            Root::builder()
+                .appender("stdout")
+                .appender("to_file")
+                .build(LevelFilter::Info),
+        )
+        .unwrap();
+    let _handle = log4rs::init_config(config).unwrap();
 
     let nat = options.nat;
     if options.server.is_some() && options.domain.is_some() {
@@ -100,16 +98,16 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
                 }
             }
         } else {
-            info!("invalid server value: {host_name}\n");
+            warn!("invalid server value: {host_name}\n");
         }
     } else if options.server.is_some() || options.domain.is_some() {
-        info!("r53-ddns v{}\n", DESCRIPTION.as_str());
+        println!("r53-ddns v{}\n", DESCRIPTION.as_str());
         error!("server and domain parameters need to be supplied together");
         return Ok(());
     }
 
     if options.version {
-        info!("r53-ddns v{}", DESCRIPTION.as_str());
+        println!("r53-ddns v{}", DESCRIPTION.as_str());
         return Ok(());
     }
 
@@ -125,7 +123,7 @@ async fn ddns_check(
 ) {
     let dns_name = format!("{host_name}{zone_name}");
     let external_ip_future = get_external_ip_address();
-    let dns_ip_future = get_dns_record(&client, &zone_id, &zone_name, &host_name, "A");
+    let dns_ip_future = get_dns_record(client, zone_id, zone_name, host_name, "A");
     let ((external_ip_address, external_address_svc), dns_ip_address) =
         join!(external_ip_future, dns_ip_future);
     if !external_ip_address.is_empty() {
@@ -143,10 +141,10 @@ async fn ddns_check(
                 "{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}"
             );
             set_dns_record(
-                &client,
-                &zone_id,
-                &zone_name,
-                &host_name,
+                client,
+                zone_id,
+                zone_name,
+                host_name,
                 "A",
                 &external_ip_address,
             )
@@ -155,27 +153,27 @@ async fn ddns_check(
     } else if !external_ip_address.is_empty() {
         warn!("{dns_name} ip address is {external_ip_address}");
         set_dns_record(
-            &client,
-            &zone_id,
-            &zone_name,
-            &host_name,
+            client,
+            zone_id,
+            zone_name,
+            host_name,
             "A",
             &external_ip_address,
         )
         .await;
     }
     if nat {
-        let nat_host_name = "\\052.".to_string() + &host_name;
+        let nat_host_name = "\\052.".to_string() + host_name;
         let dns_nat_cname =
-            get_dns_record(&client, &zone_id, &zone_name, &nat_host_name, "CNAME").await;
+            get_dns_record(client, zone_id, zone_name, &nat_host_name, "CNAME").await;
         if dns_nat_cname.is_none()
             || (dns_nat_cname.is_some() && dns_nat_cname.clone().unwrap() != dns_name)
         {
             info!("{nat_host_name}{zone_name} nat CNAME set to {dns_name}");
             set_dns_record(
-                &client,
-                &zone_id,
-                &zone_name,
+                client,
+                zone_id,
+                zone_name,
                 &nat_host_name,
                 "CNAME",
                 dns_name.as_str(),
