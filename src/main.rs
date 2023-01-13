@@ -128,8 +128,7 @@ async fn ddns_check(
     let dns_name = format!("{host_name}{zone_name}");
     let external_ip_future = get_external_ip_address();
     let dns_ip_future = get_dns_record(client, zone_id, zone_name, host_name, "A");
-    let (external_ip_address, dns_ip_address) =
-        join!(external_ip_future, dns_ip_future);
+    let (external_ip_address, dns_ip_address) = join!(external_ip_future, dns_ip_future);
     if let Some(dns_ip_address) = dns_ip_address {
         if dns_ip_address != external_ip_address
             && !dns_ip_address.is_empty()
@@ -308,7 +307,7 @@ async fn get_dns_record(
         }
         Err(x) => {
             warn!(
-                "Unable to retrieve the current dns address for {dns_name}  Home={:?} {x}", 
+                "Unable to retrieve the current dns address for {dns_name}  Home={:?} {x}",
                 home_dir()
             );
         }
