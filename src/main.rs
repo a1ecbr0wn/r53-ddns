@@ -16,6 +16,7 @@ use log4rs::encode::pattern::PatternEncoder;
 use log4rs::filter::threshold::ThresholdFilter;
 use regex::Regex;
 use reqwest::Client;
+use rusoto_core::credential::CredentialsError;
 use rusoto_core::{Region, RusotoError};
 use rusoto_route53::{
     Change, ChangeBatch, ChangeResourceRecordSetsRequest, ListHostedZonesRequest,
@@ -25,6 +26,8 @@ use tokio::{
     join, select,
     time::{sleep, Duration},
 };
+
+use dirs_next::home_dir;
 
 #[tokio::main]
 async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
@@ -125,15 +128,9 @@ async fn ddns_check(
     let dns_name = format!("{host_name}{zone_name}");
     let external_ip_future = get_external_ip_address();
     let dns_ip_future = get_dns_record(client, zone_id, zone_name, host_name, "A");
-    let ((external_ip_address, external_address_svc), dns_ip_address) =
+    let (external_ip_address, dns_ip_address) =
         join!(external_ip_future, dns_ip_future);
-    if !external_ip_address.is_empty() {
-        info!("external ip:   {external_ip_address}  (from {external_address_svc})");
-    } else {
-        warn!("external ip:   not found");
-    }
     if let Some(dns_ip_address) = dns_ip_address {
-        info!("dns ip:        {dns_ip_address}");
         if dns_ip_address != external_ip_address
             && !dns_ip_address.is_empty()
             && !external_ip_address.is_empty()
@@ -227,7 +224,7 @@ async fn get_zone_id(client: &Route53Client, zone_name: &str) -> String {
 }
 
 /// Get the external ip address from an external service
-async fn get_external_ip_address() -> (String, String) {
+async fn get_external_ip_address() -> String {
     let mut futures = FuturesUnordered::new();
     let addresses = [
         "ident.me",
@@ -245,13 +242,14 @@ async fn get_external_ip_address() -> (String, String) {
     for _ in 0..futures.len() {
         select! {
             response = futures.select_next_some() => {
-                if let Ok(response) = response {
-                    return response;
+                if let Ok((external_ip_address, external_address_svc)) = response {
+                    info!("external ip:   {}  (from {})", external_ip_address, external_address_svc);
+                    return external_ip_address;
                 }
             }
         }
     }
-    ("".to_string(), "".to_string())
+    "".to_string()
 }
 
 async fn get_http_resp(address: &str) -> Result<(String, String), ()> {
@@ -295,9 +293,11 @@ async fn get_dns_record(
                             let ip_record = record.value.clone();
                             if record_type == "A" {
                                 if ip_record.parse::<IpAddr>().is_ok() {
+                                    info!("dns ip:        {ip_record}");
                                     return Some(ip_record);
                                 }
                             } else {
+                                info!("dns ip:        {ip_record}");
                                 return Some(ip_record);
                             }
                         }
@@ -308,8 +308,8 @@ async fn get_dns_record(
         }
         Err(x) => {
             warn!(
-                "Unable to retrieve the current dns address for {dns_name}.  {:?}",
-                x
+                "Unable to retrieve the current dns address for {dns_name}  Home={:?} {x}", 
+                home_dir()
             );
         }
     }
