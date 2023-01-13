@@ -16,7 +16,6 @@ use log4rs::encode::pattern::PatternEncoder;
 use log4rs::filter::threshold::ThresholdFilter;
 use regex::Regex;
 use reqwest::Client;
-use rusoto_core::credential::CredentialsError;
 use rusoto_core::{Region, RusotoError};
 use rusoto_route53::{
     Change, ChangeBatch, ChangeResourceRecordSetsRequest, ListHostedZonesRequest,
