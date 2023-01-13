@@ -305,9 +305,12 @@ async fn get_dns_record(
                 }
             }
             debug!("No record for {dns_name} currently set up in Route 53")
-        },
+        }
         Err(x) => {
-            warn!("Unable to retrieve the current dns address for {dns_name}.  {:?}", x);
+            warn!(
+                "Unable to retrieve the current dns address for {dns_name}.  {:?}",
+                x
+            );
         }
     }
     None

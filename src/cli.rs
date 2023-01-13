@@ -25,7 +25,7 @@ pub struct Options {
     /// debug logging
     #[arg(short = 'D', long, value_parser, hide(true), default_value_t = false)]
     pub debug: bool,
-    
+
     /// check frequency in seconds for continuous checking
     #[arg(short, long, value_parser, display_order(5), default_value_t = 0)]
     pub check: u64,
