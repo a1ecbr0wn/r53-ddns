@@ -5,7 +5,7 @@ use std::net::IpAddr;
 use clap::Parser;
 use futures::stream::{FuturesUnordered, StreamExt};
 use lazy_static::lazy_static;
-use log::{error, info, warn, LevelFilter};
+use log::{debug, error, info, warn, LevelFilter};
 use log4rs::append::console::ConsoleAppender;
 use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
 use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
@@ -35,7 +35,6 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     let options = cli::Options::parse();
     let check_freq = options.check;
     // logging
-    let verbose = options.verbose;
     let stdout = ConsoleAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{m}{n}")))
         .build();
@@ -51,7 +50,9 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         .encoder(Box::new(PatternEncoder::new("{d} - {m}{n}")))
         .build("/var/tmp/r53-ddns.log", Box::new(rolling_policy))
         .unwrap();
-    let console_level = if verbose {
+    let console_level = if options.debug {
+        LevelFilter::Debug
+    } else if options.verbose {
         LevelFilter::Info
     } else {
         LevelFilter::Warn
@@ -266,6 +267,10 @@ async fn get_http_resp(address: &str) -> Result<(String, String), ()> {
     Err(())
 }
 
+//////////////////////////////
+// Amazon Route 53 Interaction
+//////////////////////////////
+
 /// Lists the ip address of a given zone/host A record
 async fn get_dns_record(
     client: &Route53Client,
@@ -280,23 +285,29 @@ async fn get_dns_record(
         start_record_name: Some(dns_name.clone()),
         ..Default::default()
     };
-    if let Ok(response) = client.list_resource_record_sets(request).await {
-        let record_sets = response.resource_record_sets;
-        for record_set in record_sets {
-            if record_set.name == dns_name && record_set.type_ == *record_type {
-                if let Some(records) = &record_set.resource_records {
-                    if let Some(record) = records.first() {
-                        let ip_record = record.value.clone();
-                        if record_type == "A" {
-                            if ip_record.parse::<IpAddr>().is_ok() {
+    match client.list_resource_record_sets(request).await {
+        Ok(response) => {
+            let record_sets = response.resource_record_sets;
+            for record_set in record_sets {
+                if record_set.name == dns_name && record_set.type_ == *record_type {
+                    if let Some(records) = &record_set.resource_records {
+                        if let Some(record) = records.first() {
+                            let ip_record = record.value.clone();
+                            if record_type == "A" {
+                                if ip_record.parse::<IpAddr>().is_ok() {
+                                    return Some(ip_record);
+                                }
+                            } else {
                                 return Some(ip_record);
                             }
-                        } else {
-                            return Some(ip_record);
                         }
                     }
                 }
             }
+            debug!("No record for {dns_name} currently set up in Route 53")
+        },
+        Err(x) => {
+            warn!("Unable to retrieve the current dns address for {dns_name}.  {:?}", x);
         }
     }
     None
