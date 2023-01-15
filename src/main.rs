@@ -1,6 +1,9 @@
 mod cli;
+mod snap;
 
+use std::env;
 use std::net::IpAddr;
+use std::str::FromStr;
 
 use clap::Parser;
 use futures::stream::{FuturesUnordered, StreamExt};
@@ -36,7 +39,8 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
 
     let options = cli::Options::parse();
     let check_freq = options.check;
-    // logging
+
+    // set up logging
     let stdout = ConsoleAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{m}{n}")))
         .build();
@@ -75,6 +79,29 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         .unwrap();
     let _handle = log4rs::init_config(config).unwrap();
 
+    if env::var("AWS_SHARED_CREDENTIALS_FILE").is_err() {
+        // if we are in a snap, rusoto will fail to read the credentials file from the $HOME/.aws/credential,
+        // so set up that path but pointing to the real home rather than the snap home
+        let (in_snap, home) = snap::check_in_snap();
+        if in_snap {
+            if let Some(mut credentials_file) = home {
+                credentials_file.push(".aws");
+                credentials_file.push("credentials");
+                if credentials_file.exists() {
+                    env::set_var(
+                        "AWS_SHARED_CREDENTIALS_FILE",
+                        credentials_file.as_path().to_str().unwrap(),
+                    );
+                    debug!(
+                        "within snap, AWS_SHARED_CREDENTIALS_FILE set to {:?}",
+                        credentials_file
+                    );
+                }
+            }
+        }
+    }
+
+    // Get the options for the ddns check, and run it
     let nat = options.nat;
     if options.server.is_some() && options.domain.is_some() {
         let mut host_name = options.server.unwrap();
@@ -88,7 +115,17 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             }
             info!("server:        {}", host_name.clone());
             info!("domain:        {}", zone_name.clone());
-            let client = Route53Client::new(Region::UsEast1);
+            let region = if options.region.is_some() {
+                let region = options.region.unwrap();
+                match Region::from_str(region.as_str()) {
+                    Ok(region) => region,
+                    Err(_) => Region::UsEast1,
+                }
+            } else {
+                Region::UsEast1
+            };
+            info!("region:        {:?}", region);
+            let client = Route53Client::new(region);
             let zone_id = get_zone_id(&client, &zone_name).await;
             info!("zone id:       {zone_id}");
 

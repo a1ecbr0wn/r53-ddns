@@ -14,6 +14,10 @@ pub struct Options {
     #[arg(short, long, value_parser, display_order(2))]
     pub domain: Option<String>,
 
+    /// the aws region
+    #[arg(short, long, value_parser, display_order(2))]
+    pub region: Option<String>,
+
     /// the record is a nat router and so a *.server CNAME record will be set
     #[arg(short, long, value_parser, display_order(3))]
     pub nat: bool,
