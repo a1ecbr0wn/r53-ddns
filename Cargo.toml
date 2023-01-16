@@ -16,6 +16,13 @@ categories = ["networking"]
 path = "src/main.rs"
 name = "r53-ddns"
 
+[profile.minsize]
+strip = true
+opt-level = "s"
+lto = "fat"
+panic = "abort"
+inherits = "release"
+
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
 futures = "0.3.25"
@@ -26,5 +33,5 @@ regex = "1.7.0"
 reqwest = { version = "0.11", default_features=false, features = ["rustls-tls-native-roots"] }
 rusoto_core = { version="0.48", default_features=false, features=["rustls"] }
 rusoto_route53 = { version="0.48", default_features=false, features=["rustls"] }
-tokio = { version = "1", features = ["sync"] }
+tokio = { version = "1", features = ["macros"] }
 dirs-next = "2.0.0"

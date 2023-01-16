@@ -66,10 +66,10 @@ jobs:
         with:
           use-cross: true
           command: build
-          args: --release --target=${{ matrix.TARGET }}
+          args: --profile=minsize --target=${{ matrix.TARGET }}
 
       - name: "Package Release"
-        run: tar cvzf r53-ddns-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/release r53-ddns
+        run: tar cvzf r53-ddns-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/minsize r53-ddns
 
       - name: "Generate SHA checksum"
         run: shasum -a 256 -U r53-ddns-${{ matrix.TARGET }}.tar.gz > r53-ddns-${{ matrix.TARGET }}.sha
@@ -118,10 +118,10 @@ jobs:
         with:
           use-cross: true
           command: build
-          args: --release --target=${{ matrix.TARGET }}
+          args: --profile=minsize --target=${{ matrix.TARGET }}
 
       - name: "Package Release"
-        run: tar cvzf r53-ddns-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/release r53-ddns
+        run: tar cvzf r53-ddns-${{ matrix.TARGET }}.tar.gz --directory=target/${{ matrix.TARGET }}/minsize r53-ddns
 
       - name: "Generate SHA checksum"
         run: shasum -a 256 -U r53-ddns-${{ matrix.TARGET }}.tar.gz > r53-ddns-${{ matrix.TARGET }}.sha
