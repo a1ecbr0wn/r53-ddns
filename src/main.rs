@@ -103,7 +103,6 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     }
 
     // Get the options for the ddns check, and run it
-    let nat = options.nat;
     if options.server.is_some() && options.domain.is_some() {
         let mut host_name = options.server.unwrap();
         let mut zone_name = options.domain.unwrap();
@@ -130,11 +129,17 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             let zone_id = get_zone_id(&client, &zone_name).await;
             info!("zone id:       {zone_id}");
 
+            let nat = options.nat;
+            let ipaddresses: Option<Vec<String>> = match options.ipaddress_svc {
+                Some(addrs) => Some(addrs.split(',').map(|x| x.to_string()).collect()),
+                None => None,
+            };
+
             if check_freq == 0 {
-                ddns_check(&client, &zone_id, &zone_name, &host_name, nat).await;
+                ddns_check(&client, &zone_id, &zone_name, &host_name, &ipaddresses, nat).await;
             } else {
                 loop {
-                    ddns_check(&client, &zone_id, &zone_name, &host_name, nat).await;
+                    ddns_check(&client, &zone_id, &zone_name, &host_name, &ipaddresses, nat).await;
                     sleep(Duration::from_millis(1000 * check_freq)).await;
                 }
             }
@@ -160,10 +165,11 @@ async fn ddns_check(
     zone_id: &str,
     zone_name: &str,
     host_name: &str,
+    ipaddresses: &Option<Vec<String>>,
     nat: bool,
 ) {
     let dns_name = format!("{host_name}{zone_name}");
-    let external_ip_future = get_external_ip_address();
+    let external_ip_future = get_external_ip_address(ipaddresses);
     let dns_ip_future = get_dns_record(client, zone_id, zone_name, host_name, "A");
     let (external_ip_address, dns_ip_address) = join!(external_ip_future, dns_ip_future);
     if let Some(dns_ip_address) = dns_ip_address {
@@ -260,9 +266,10 @@ async fn get_zone_id(client: &Route53Client, zone_name: &str) -> String {
 }
 
 /// Get the external ip address from an external service
-async fn get_external_ip_address() -> String {
+async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
     let mut futures = FuturesUnordered::new();
-    let addresses = [
+
+    let default_ipaddresses: Vec<String> = [
         "ident.me",
         "ifconfig.me/ip",
         "icanhazip.com",
@@ -270,11 +277,25 @@ async fn get_external_ip_address() -> String {
         "ipecho.net/plain",
         "checkip.amazonaws.com",
         "myip.dnsomatic.com",
-        "diagnostic.opendns.com/myip",
-    ]
-    .choose_multiple(&mut rand::thread_rng(), 2) // just try a couple of them randomly
-    .map(|x| get_http_resp(x));
-    futures.extend(addresses);
+    ].iter().map(|x| x.to_string()). collect();
+    let ipaddresses: Vec<String> = match ipaddresses {
+        Some(ipaddresses) => {
+            if ipaddresses.len() > 1 {
+                ipaddresses.choose_multiple(&mut rand::thread_rng(), 2).map(|x| x.to_string()).collect()
+            } else {
+                default_ipaddresses.choose_multiple(&mut rand::thread_rng(), 2).map(|x| x.to_string()).collect()
+            }
+        },
+        None => {
+            default_ipaddresses.choose_multiple(&mut rand::thread_rng(), 2).map(|x| x.to_string()).collect()
+        }
+    };
+
+    // let addresses_fut = ipaddresses.into_iter().map(|x| get_http_resp(x.as_str()));
+    for ipaddress in ipaddresses {
+        let address_fut = get_http_resp(ipaddress);
+        futures.push(address_fut);
+    }
     for _ in 0..futures.len() {
         select! {
             response = futures.select_next_some() => {
@@ -288,7 +309,7 @@ async fn get_external_ip_address() -> String {
     "".to_string()
 }
 
-async fn get_http_resp(address: &str) -> Result<(String, String), ()> {
+async fn get_http_resp(address: String) -> Result<(String, String), ()> {
     let client = Client::new();
     if let Ok(resp) = client.get(format!("https://{address}")).send().await {
         if let Ok(response) = resp.text().await {
