@@ -17,6 +17,7 @@ use log4rs::append::rolling_file::RollingFileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::filter::threshold::ThresholdFilter;
+use rand::seq::SliceRandom;
 use regex::Regex;
 use reqwest::Client;
 use rusoto_core::{Region, RusotoError};
@@ -271,7 +272,7 @@ async fn get_external_ip_address() -> String {
         "myip.dnsomatic.com",
         "diagnostic.opendns.com/myip",
     ]
-    .iter()
+    .choose_multiple(&mut rand::thread_rng(), 2) // just try a couple of them randomly
     .map(|x| get_http_resp(x));
     futures.extend(addresses);
     for _ in 0..futures.len() {
