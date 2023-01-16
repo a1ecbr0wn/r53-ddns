@@ -32,7 +32,7 @@ use tokio::{
 
 use dirs_next::home_dir;
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     lazy_static! {
         static ref DESCRIPTION: String = format!(env!("CARGO_PKG_VERSION"));
