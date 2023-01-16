@@ -130,10 +130,9 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             info!("zone id:       {zone_id}");
 
             let nat = options.nat;
-            let ipaddresses: Option<Vec<String>> = match options.ipaddress_svc {
-                Some(addrs) => Some(addrs.split(',').map(|x| x.to_string()).collect()),
-                None => None,
-            };
+            let ipaddresses: Option<Vec<String>> = options
+                .ipaddress_svc
+                .map(|addrs| addrs.split(',').map(|x| x.to_string()).collect());
 
             if check_freq == 0 {
                 ddns_check(&client, &zone_id, &zone_name, &host_name, &ipaddresses, nat).await;
