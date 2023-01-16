@@ -277,18 +277,28 @@ async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
         "ipecho.net/plain",
         "checkip.amazonaws.com",
         "myip.dnsomatic.com",
-    ].iter().map(|x| x.to_string()). collect();
+    ]
+    .iter()
+    .map(|x| x.to_string())
+    .collect();
     let ipaddresses: Vec<String> = match ipaddresses {
         Some(ipaddresses) => {
             if ipaddresses.len() > 1 {
-                ipaddresses.choose_multiple(&mut rand::thread_rng(), 2).map(|x| x.to_string()).collect()
+                ipaddresses
+                    .choose_multiple(&mut rand::thread_rng(), 2)
+                    .map(|x| x.to_string())
+                    .collect()
             } else {
-                default_ipaddresses.choose_multiple(&mut rand::thread_rng(), 2).map(|x| x.to_string()).collect()
+                default_ipaddresses
+                    .choose_multiple(&mut rand::thread_rng(), 2)
+                    .map(|x| x.to_string())
+                    .collect()
             }
-        },
-        None => {
-            default_ipaddresses.choose_multiple(&mut rand::thread_rng(), 2).map(|x| x.to_string()).collect()
         }
+        None => default_ipaddresses
+            .choose_multiple(&mut rand::thread_rng(), 2)
+            .map(|x| x.to_string())
+            .collect(),
     };
 
     // let addresses_fut = ipaddresses.into_iter().map(|x| get_http_resp(x.as_str()));
