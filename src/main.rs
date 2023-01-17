@@ -135,10 +135,26 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
                 .map(|addrs| addrs.split(',').map(|x| x.to_string()).collect());
 
             if check_freq == 0 {
-                ddns_check(&client, &zone_id, &zone_name, &subdomain_name, &ipaddresses, nat).await;
+                ddns_check(
+                    &client,
+                    &zone_id,
+                    &zone_name,
+                    &subdomain_name,
+                    &ipaddresses,
+                    nat,
+                )
+                .await;
             } else {
                 loop {
-                    ddns_check(&client, &zone_id, &zone_name, &subdomain_name, &ipaddresses, nat).await;
+                    ddns_check(
+                        &client,
+                        &zone_id,
+                        &zone_name,
+                        &subdomain_name,
+                        &ipaddresses,
+                        nat,
+                    )
+                    .await;
                     sleep(Duration::from_millis(1000 * check_freq)).await;
                 }
             }
