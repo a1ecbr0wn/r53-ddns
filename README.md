@@ -76,13 +76,13 @@ AWS_ACCESS_KEY = ...
 AWS_SECRET_ACCESS_KEY = ...
 ```
 
-Some of the default services used to return the external ip address of your network will stop giving you a response if called too frequently, it is recomended that you don't call them more often than once every 2 minutes without increasing the number of configured services (via the `-i` parameter), hence the `*/5` in the cron example above.
+Some of the default services used to return the external ip address of your network will stop giving you a response if called too frequently, it is recomended that you don't call them more often than once every 5 minutes without increasing the number of configured services (via the `-i` parameter), hence the `*/5` in the cron example above.
 
 ### Setup as a service using `systemd`
 
 - Create a file called `/etc/systemd/system/r53-ddns.service` as root.
 
-``` toml
+```
 [Unit]
 Description=R53 DDNS Service
 After=network.target
