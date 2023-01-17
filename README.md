@@ -65,7 +65,7 @@ r53-ddns can be used adhoc if you wish but you probably want to set this up to r
 
 The following example is an entry into a cron file that will set up the subdomain `net.example.com`, performing the external ip and dns check every 5 minutes, assuming that the application has been installed via snap:
 
-``` sh
+``` cron
 */5 * * * * /snap/bin/r53-ddns -s=net -d=example.com
 ```
 
@@ -82,7 +82,7 @@ Some of the default services used to return the external ip address of your netw
 
 - Create a file called `/etc/systemd/system/r53-ddns.service` as root.
 
-```
+``` service
 [Unit]
 Description=R53 DDNS Service
 After=network.target
