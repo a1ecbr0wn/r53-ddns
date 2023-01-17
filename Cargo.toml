@@ -1,9 +1,9 @@
 [package]
 name = "r53-ddns"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 authors = ["Alec Brown <alec@noser.net>"]
-description = "Set a dns record for the server in an AWS Route53 domain record."
+description = "Set an Amazon Route 53 DNS record for the server/network"
 license = "Apache-2.0"
 repository = "https://github.com/a1ecbr0wn/r53-ddns"
 readme = "README.md"
