@@ -6,15 +6,15 @@ use clap::Parser;
 #[command(bin_name = "r53-ddns")]
 #[command(author, version, about, long_about = None, arg_required_else_help(true), disable_version_flag(true))]
 pub struct Options {
-    /// The server to save
+    /// The subdomain to save (required)
     #[arg(short, long, value_parser, display_order(1))]
-    pub server: Option<String>,
+    pub subdomain: Option<String>,
 
-    /// The domain to save the record in
+    /// The domain to save the record in  (required)
     #[arg(short, long, value_parser, display_order(2))]
     pub domain: Option<String>,
 
-    /// The aws region
+    /// The aws region, [default: us-east-1]
     #[arg(short, long, value_parser, display_order(3))]
     pub region: Option<String>,
 
@@ -22,7 +22,7 @@ pub struct Options {
     #[arg(short, long, value_parser, display_order(4))]
     pub ipaddress_svc: Option<String>,
 
-    /// The record is a nat router and so a *.server CNAME record will be set
+    /// The record is a nat router and so a *.<subdomain>.<domain> CNAME record will be set
     #[arg(short, long, value_parser, display_order(5))]
     pub nat: bool,
 
@@ -34,7 +34,7 @@ pub struct Options {
     #[arg(short = 'D', long, value_parser, hide(true), default_value_t = false)]
     pub debug: bool,
 
-    /// Check frequency in seconds for continuous checking
+    /// Consecutive check gap in seconds for continuous checking
     #[arg(short, long, value_parser, display_order(7), default_value_t = 0)]
     pub check: u64,
 

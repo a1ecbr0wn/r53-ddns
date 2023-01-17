@@ -103,17 +103,17 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     }
 
     // Get the options for the ddns check, and run it
-    if options.server.is_some() && options.domain.is_some() {
-        let mut host_name = options.server.unwrap();
+    if options.subdomain.is_some() && options.domain.is_some() {
+        let mut subdomain_name = options.subdomain.unwrap();
         let mut zone_name = options.domain.unwrap();
-        if is_valid_hostname(&host_name) {
-            if !host_name.ends_with('.') {
-                host_name += ".";
+        if is_valid_hostname(&subdomain_name) {
+            if !subdomain_name.ends_with('.') {
+                subdomain_name += ".";
             }
             if !zone_name.ends_with('.') {
                 zone_name += ".";
             }
-            info!("server:        {}", host_name.clone());
+            info!("subdomain:     {}", subdomain_name.clone());
             info!("domain:        {}", zone_name.clone());
             let region = if options.region.is_some() {
                 let region = options.region.unwrap();
@@ -124,7 +124,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             } else {
                 Region::UsEast1
             };
-            info!("region:        {:?}", region);
+            info!("region:        {}", region.name());
             let client = Route53Client::new(region);
             let zone_id = get_zone_id(&client, &zone_name).await;
             info!("zone id:       {zone_id}");
@@ -135,19 +135,19 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
                 .map(|addrs| addrs.split(',').map(|x| x.to_string()).collect());
 
             if check_freq == 0 {
-                ddns_check(&client, &zone_id, &zone_name, &host_name, &ipaddresses, nat).await;
+                ddns_check(&client, &zone_id, &zone_name, &subdomain_name, &ipaddresses, nat).await;
             } else {
                 loop {
-                    ddns_check(&client, &zone_id, &zone_name, &host_name, &ipaddresses, nat).await;
+                    ddns_check(&client, &zone_id, &zone_name, &subdomain_name, &ipaddresses, nat).await;
                     sleep(Duration::from_millis(1000 * check_freq)).await;
                 }
             }
         } else {
-            warn!("invalid server value: {host_name}\n");
+            warn!("invalid subdomain value: {subdomain_name}\n");
         }
-    } else if options.server.is_some() || options.domain.is_some() {
+    } else if options.subdomain.is_some() || options.domain.is_some() {
         println!("r53-ddns v{}\n", DESCRIPTION.as_str());
-        error!("server and domain parameters need to be supplied together");
+        error!("subdomain and domain parameters need to be supplied together");
         return Ok(());
     }
 
@@ -163,13 +163,13 @@ async fn ddns_check(
     client: &Route53Client,
     zone_id: &str,
     zone_name: &str,
-    host_name: &str,
+    subdomain_name: &str,
     ipaddresses: &Option<Vec<String>>,
     nat: bool,
 ) {
-    let dns_name = format!("{host_name}{zone_name}");
+    let dns_name = format!("{subdomain_name}{zone_name}");
     let external_ip_future = get_external_ip_address(ipaddresses);
-    let dns_ip_future = get_dns_record(client, zone_id, zone_name, host_name, "A");
+    let dns_ip_future = get_dns_record(client, zone_id, zone_name, subdomain_name, "A");
     let (external_ip_address, dns_ip_address) = join!(external_ip_future, dns_ip_future);
     if let Some(dns_ip_address) = dns_ip_address {
         if dns_ip_address != external_ip_address
@@ -183,7 +183,7 @@ async fn ddns_check(
                 client,
                 zone_id,
                 zone_name,
-                host_name,
+                subdomain_name,
                 "A",
                 &external_ip_address,
             )
@@ -195,25 +195,25 @@ async fn ddns_check(
             client,
             zone_id,
             zone_name,
-            host_name,
+            subdomain_name,
             "A",
             &external_ip_address,
         )
         .await;
     }
     if nat {
-        let nat_host_name = "\\052.".to_string() + host_name;
+        let nat_subdomain_name = "\\052.".to_string() + subdomain_name;
         let dns_nat_cname =
-            get_dns_record(client, zone_id, zone_name, &nat_host_name, "CNAME").await;
+            get_dns_record(client, zone_id, zone_name, &nat_subdomain_name, "CNAME").await;
         if dns_nat_cname.is_none()
             || (dns_nat_cname.is_some() && dns_nat_cname.clone().unwrap() != dns_name)
         {
-            info!("{nat_host_name}{zone_name} nat CNAME set to {dns_name}");
+            info!("{nat_subdomain_name}{zone_name} nat CNAME set to {dns_name}");
             set_dns_record(
                 client,
                 zone_id,
                 zone_name,
-                &nat_host_name,
+                &nat_subdomain_name,
                 "CNAME",
                 dns_name.as_str(),
             )
@@ -222,13 +222,13 @@ async fn ddns_check(
     }
 }
 
-/// This function checks to see whether the host_name entered into the zone and cname tags is a valid host_name.
-fn is_valid_hostname(host_name: &str) -> bool {
-    if host_name.len() > 255 {
+/// This function checks to see whether the subdomain_name entered into the zone and cname tags is a valid subdomain_name.
+fn is_valid_hostname(subdomain_name: &str) -> bool {
+    if subdomain_name.len() > 255 {
         return false;
     }
     let re = Regex::new(r"^[a-zA-Z\d-]{1,63}$").unwrap();
-    for s in host_name.split('.') {
+    for s in subdomain_name.split('.') {
         if !re.is_match(s) && !s.is_empty() {
             return false;
         }
@@ -340,10 +340,10 @@ async fn get_dns_record(
     client: &Route53Client,
     zone_id: &str,
     zone_name: &str,
-    host_name: &str,
+    subdomain_name: &str,
     record_type: &str,
 ) -> Option<String> {
-    let dns_name = format!("{host_name}{zone_name}");
+    let dns_name = format!("{subdomain_name}{zone_name}");
     let request = ListResourceRecordSetsRequest {
         hosted_zone_id: zone_id.to_string(),
         start_record_name: Some(dns_name.clone()),
@@ -387,12 +387,12 @@ async fn set_dns_record(
     client: &Route53Client,
     zone_id: &str,
     zone_name: &str,
-    host_name: &str,
+    subdomain_name: &str,
     record_type: &str,
     record_value: &str,
 ) {
     // Build the request to change the resource record sets
-    let dns_name = format!("{host_name}{zone_name}");
+    let dns_name = format!("{subdomain_name}{zone_name}");
     let request = ChangeResourceRecordSetsRequest {
         hosted_zone_id: zone_id.to_string(),
         change_batch: ChangeBatch {
