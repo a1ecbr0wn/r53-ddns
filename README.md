@@ -15,6 +15,12 @@ There are many reasons why you would want this, the most common is to provide a 
 
 This is not is a publicly facing DDNS API, for that I would recomend another repository with a similar name: [aws-ddns](https://github.com/dixonwille/aws-ddns).  This is an application that provides DDNS using the R53 API, it is intended that you run this on one a computer within your network at a frequency that you are happy with.
 
+## Pre-Requisites
+
+- An AWS account, this tool uses the Amazon Route 53 service which is part of AWS, so you need an account
+- Your own domain, the Route 53 service allows you to manage the DNS of your own domain and this tool allows you to map a subdomain to your current external IP address
+- [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) permissioned to modify R53 records stored in a local credentials file located at `$HOME/.aws/credentials` as you would for the AWS CLI.  You can also use the `AWS_SHARED_CREDENTIALS_FILE` environment variable to locate your credential file, or use `AWS_ACCESS_KEY` / `AWS_SECRET_ACCESS_KEY` environment variables to specify your credentials.
+
 ## Installation
 
 - [Homebrew](docs/install-homebrew.md)
