@@ -30,8 +30,6 @@ use tokio::{
     time::{sleep, Duration},
 };
 
-use dirs_next::home_dir;
-
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     lazy_static! {
@@ -390,8 +388,8 @@ async fn get_dns_record(
         }
         Err(x) => {
             warn!(
-                "Unable to retrieve the current dns address for {dns_name}  Home={:?} {x}",
-                home_dir()
+                "Unable to retrieve the current dns address for {dns_name}  Home={} {x}",
+                env::var("AWS_SHARED_CREDENTIALS_FILE").unwrap()
             );
         }
     }

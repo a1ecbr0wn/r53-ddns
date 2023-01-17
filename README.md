@@ -48,7 +48,7 @@ Options:
 - If the region for the domain is in a different region to the default `us-east-1`, it needs to be specified with the `-r` parameter.
 - The default list of ip address https services can be overridden with the `-i` parameter.
 - If the `-n` parameter is supplied, an additional *.<subdomain>.<domain> DNS record is set.  This can be used to route traffic to all hosts with that pattern to the network.
-- To get the application to work continuously, the `-c` parameter can be used to pass in the length of the gap in seconds between consecutive checks.  Some of the ip address web servers will return errors if they are called too often, this application tries to address this by randomising the services that are used, but it is recomended that with the default list, the consecutive check gap is not below 120 seconds.
+- To get the application to work continuously, the `-c` parameter can be used to pass in the length of the gap in seconds between consecutive checks.  Some of the ip address web servers will return errors if they are called too often, this application tries to address this by randomising the services that are used, but it is recomended that with the default list, the consecutive check gap is not below 300 seconds.
 
 ## Installation
 
@@ -61,13 +61,12 @@ Options:
 
 r53-ddns can be used adhoc if you wish but you probably want to set this up to run continuously in case your external ip address changes.  There are two ways that you can do this, using a job scheduler such as cron or as a service.
 
-
 ### Setup with cron
 
 The following example is an entry into a cron file that will set up the subdomain `net.example.com`, performing the external ip and dns check every 5 minutes, assuming that the application has been installed via snap:
 
 ``` sh
-*/2 * * * * /snap/bin/r53-ddns -s=net -d=example.com
+*/5 * * * * /snap/bin/r53-ddns -s=net -d=example.com
 ```
 
 At the top of the cron file, you may also want to declare the AWS environment variables that provide the credentials:
@@ -77,7 +76,7 @@ AWS_ACCESS_KEY = ...
 AWS_SECRET_ACCESS_KEY = ...
 ```
 
-Some of the default services used to return the external ip address of your network will stop giving you a response if called too frequently, it is recomended that you don't call them more often than once every 2 minutes without increasing the number of configured services (via the `-i` parameter), hence the `*/2` in the cron example above.
+Some of the default services used to return the external ip address of your network will stop giving you a response if called too frequently, it is recomended that you don't call them more often than once every 2 minutes without increasing the number of configured services (via the `-i` parameter), hence the `*/5` in the cron example above.
 
 ### Setup as a service using `systemd`
 
@@ -94,12 +93,13 @@ Type=simple
 Restart=always
 RestartSec=1
 User=root
-ExecStart=/snap/bin/r53-ddns -s=net -d=example.com -c=120
+ExecStart=/snap/bin/r53-ddns -s=net -d=example.com -c=300
 
 [Install]
 WantedBy=multi-user.target
 ```
 
+- Set up the AWS credentials file in default location for the root user.
 - That's it. Just start the service with the following:
 
 ``` sh
