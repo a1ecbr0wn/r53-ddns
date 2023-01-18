@@ -27,7 +27,7 @@ The application works gets it's external network address over https from some of
 
 ## Options
 
-``` sh
+``` text
 Set an Amazon Route 53 DNS record for the server/network
 
 Usage: r53-ddns [OPTIONS]
@@ -65,18 +65,20 @@ r53-ddns can be used adhoc if you wish but you probably want to set this up to r
 
 The following example is an entry into a cron file that will set up the subdomain `net.example.com`, performing the external ip and dns check every 5 minutes, assuming that the application has been installed via snap:
 
-``` cron
+``` text
 */5 * * * * /snap/bin/r53-ddns -s=net -d=example.com
 ```
 
 At the top of the cron file, you may also want to declare the AWS environment variables that provide the credentials:
 
-``` sh
+``` text
 AWS_ACCESS_KEY = ...
 AWS_SECRET_ACCESS_KEY = ...
 ```
 
 Some of the default services used to return the external ip address of your network will stop giving you a response if called too frequently, it is recomended that you don't call them more often than once every 5 minutes without increasing the number of configured services (via the `-i` parameter), hence the `*/5` in the cron example above.
+
+As an added bonus, if you have email set up on your server you can set up a `MAILTO` environment variable in your crontab and it will email you every time your ip address changes.
 
 ### Setup as a service using `systemd`
 
@@ -105,6 +107,12 @@ WantedBy=multi-user.target
 ``` sh
 sudo systemctl start r53-ddns
 ```
+
+## Issues
+
+If you are having issues with the execution of this application, start by enabling verbose logging with the `-v` parameter.  If you are trying to debug running this in cron or as a service, logging is enabled by default to `/var/tmp/r53-ddns.log` so that this can be run from any user.
+
+If the issues are not obvious or you think there is a bug, please raise an issue via [GitHub](https://github.com/a1ecbr0wn/homebrew-r53-ddns/issues).
 
 ## Contribute
 
