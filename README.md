@@ -110,7 +110,7 @@ sudo systemctl start r53-ddns
 
 ## Setup as a service on MacOS using `launchd`
 
-- Create a file called `/Library/LaunchDaemons/r53-ddns.plist` as root:
+- Create a file called `~/Library/LaunchAgents/r53-ddns.plist` as the current user:
 
 ``` xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -138,6 +138,8 @@ sudo systemctl start r53-ddns
 ``` sh
 launchctl load ~/Library/LaunchAgents/r53-ddns.plist
 ```
+
+- The service should startup each time the user logs in
 
 ## Issues
 
