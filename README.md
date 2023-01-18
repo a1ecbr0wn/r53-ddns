@@ -80,7 +80,7 @@ Some of the default services used to return the external ip address of your netw
 
 As an added bonus, if you have email set up on your server you can set up a `MAILTO` environment variable in your crontab and it will email you every time your ip address changes.
 
-### Setup as a service using `systemd`
+### Setup as a service on Linux using `systemd`
 
 - Create a file called `/etc/systemd/system/r53-ddns.service` as root.
 
@@ -102,10 +102,41 @@ WantedBy=multi-user.target
 ```
 
 - Set up the AWS credentials file in default location for the root user.
-- That's it. Just start the service with the following:
+- Start the service with the following:
 
 ``` sh
 sudo systemctl start r53-ddns
+```
+
+## Setup as a service on MacOS using `launchd`
+
+- Create a file called `/Library/LaunchDaemons/r53-ddns.plist` as root:
+
+``` xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>r53-ddns</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/r53-ddns</string>
+        <string>-s=net</string>
+        <string>-d=example.com</string>
+        <string>-c=300</string>
+    </array>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+```
+
+- Set up the AWS credentials file in default location for the current user.
+- To load and start your service run the folowing:
+
+``` sh
+launchctl load ~/Library/LaunchAgents/r53-ddns.plist
 ```
 
 ## Issues
