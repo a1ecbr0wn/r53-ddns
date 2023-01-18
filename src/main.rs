@@ -3,6 +3,7 @@ mod snap;
 
 use std::env;
 use std::net::IpAddr;
+use std::path::Path;
 use std::str::FromStr;
 
 use clap::Parser;
@@ -40,6 +41,18 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     let check_freq = options.check;
 
     // set up logging
+    let log_dir = Path::new(&options.logdir);
+    let (log_file, log_roll) = if log_dir.is_dir() {
+        let mut log_file = log_dir.to_path_buf();
+        log_file.push("r53-ddns.log");
+        let mut log_roll = log_dir.to_path_buf();
+        log_roll.push("r53-ddns.{}.log");
+        (log_file.display().to_string(), log_roll.display().to_string())
+    } else {
+        println!("`{}' is not a valid path for the log file", log_dir.display());
+        ("/var/tmp/r53-ddns.log".to_string(), "/var/tmp/r53-ddns.{}.log".to_string())
+    };
+
     let stdout = ConsoleAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{m}{n}")))
         .build();
@@ -47,13 +60,13 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         Box::new(SizeTrigger::new(1024 * 1024 * 4)), // 4mb
         Box::new(
             FixedWindowRoller::builder()
-                .build("/var/tmp/r53-ddns.{}.log", 10)
+                .build(&log_roll, 10)
                 .unwrap(),
         ),
     );
     let to_file = RollingFileAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{d} - {m}{n}")))
-        .build("/var/tmp/r53-ddns.log", Box::new(rolling_policy))
+        .build(&log_file, Box::new(rolling_policy))
         .unwrap();
     let console_level = if options.debug {
         LevelFilter::Debug
@@ -113,14 +126,9 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             }
             info!("subdomain:     {}", subdomain_name.clone());
             info!("domain:        {}", zone_name.clone());
-            let region = if options.region.is_some() {
-                let region = options.region.unwrap();
-                match Region::from_str(region.as_str()) {
+            let region = match Region::from_str(options.region.as_str()) {
                     Ok(region) => region,
                     Err(_) => Region::UsEast1,
-                }
-            } else {
-                Region::UsEast1
             };
             info!("region:        {}", region.name());
             let client = Route53Client::new(region);
