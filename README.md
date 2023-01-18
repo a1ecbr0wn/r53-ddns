@@ -61,85 +61,9 @@ Options:
 
 r53-ddns can be used adhoc if you wish but you probably want to set this up to run continuously in case your external ip address changes.  There are two ways that you can do this, using a job scheduler such as cron or as a service.
 
-### Setup with cron
-
-The following example is an entry into a cron file that will set up the subdomain `net.example.com`, performing the external ip and dns check every 5 minutes, assuming that the application has been installed via snap:
-
-``` text
-*/5 * * * * /snap/bin/r53-ddns -s=net -d=example.com
-```
-
-At the top of the cron file, you may also want to declare the AWS environment variables that provide the credentials:
-
-``` text
-AWS_ACCESS_KEY = ...
-AWS_SECRET_ACCESS_KEY = ...
-```
-
-Some of the default services used to return the external ip address of your network will stop giving you a response if called too frequently, it is recomended that you don't call them more often than once every 5 minutes without increasing the number of configured services (via the `-i` parameter), hence the `*/5` in the cron example above.
-
-As an added bonus, if you have email set up on your server you can set up a `MAILTO` environment variable in your crontab and it will email you every time your ip address changes.
-
-### Setup as a service on Linux using `systemd`
-
-- Create a file called `/etc/systemd/system/r53-ddns.service` as root.
-
-``` service
-[Unit]
-Description=R53 DDNS Service
-After=network.target
-StartLimitIntervalSec=0
-
-[Service]
-Type=simple
-Restart=always
-RestartSec=1
-User=root
-ExecStart=/snap/bin/r53-ddns -s=net -d=example.com -c=300
-
-[Install]
-WantedBy=multi-user.target
-```
-
-- Set up the AWS credentials file in default location for the root user.
-- Start the service with the following:
-
-``` sh
-sudo systemctl start r53-ddns
-```
-
-## Setup as a service on MacOS using `launchd`
-
-- Create a file called `~/Library/LaunchAgents/r53-ddns.plist` as the current user:
-
-``` xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>r53-ddns</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/opt/homebrew/bin/r53-ddns</string>
-        <string>-s=net</string>
-        <string>-d=example.com</string>
-        <string>-c=300</string>
-    </array>
-    <key>KeepAlive</key>
-    <true/>
-</dict>
-</plist>
-```
-
-- Set up the AWS credentials file in default location for the current user.
-- To load and start your service run the folowing:
-
-``` sh
-launchctl load ~/Library/LaunchAgents/r53-ddns.plist
-```
-
-- The service should startup each time the user logs in
+- [Setup cron](docs/setup-cron.md)
+- [Setup Systemd Service on Linux](docs/setup-systemd.md)
+- [Setup Launchd Service on MacOS](docs/setup-launchd.md)
 
 ## Issues
 
