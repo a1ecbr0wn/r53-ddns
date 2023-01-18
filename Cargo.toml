@@ -1,6 +1,6 @@
 [package]
 name = "r53-ddns"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 authors = ["Alec Brown <alec@noser.net>"]
 description = "Set an Amazon Route 53 DNS record for the server/network"
