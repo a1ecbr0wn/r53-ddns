@@ -28,7 +28,13 @@ pub struct Options {
     pub nat: bool,
 
     /// Absolute path for the directory where log file should be written
-    #[arg(short, long, value_parser, display_order(6), default_value = "/var/tmp")]
+    #[arg(
+        short,
+        long,
+        value_parser,
+        display_order(6),
+        default_value = "/var/tmp"
+    )]
     pub logdir: String,
 
     /// Verbose logging

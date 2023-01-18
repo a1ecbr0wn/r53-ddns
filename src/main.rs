@@ -47,10 +47,19 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         log_file.push("r53-ddns.log");
         let mut log_roll = log_dir.to_path_buf();
         log_roll.push("r53-ddns.{}.log");
-        (log_file.display().to_string(), log_roll.display().to_string())
+        (
+            log_file.display().to_string(),
+            log_roll.display().to_string(),
+        )
     } else {
-        println!("`{}' is not a valid path for the log file", log_dir.display());
-        ("/var/tmp/r53-ddns.log".to_string(), "/var/tmp/r53-ddns.{}.log".to_string())
+        println!(
+            "`{}' is not a valid path for the log file",
+            log_dir.display()
+        );
+        (
+            "/var/tmp/r53-ddns.log".to_string(),
+            "/var/tmp/r53-ddns.{}.log".to_string(),
+        )
     };
 
     let stdout = ConsoleAppender::builder()
@@ -58,11 +67,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         .build();
     let rolling_policy = CompoundPolicy::new(
         Box::new(SizeTrigger::new(1024 * 1024 * 4)), // 4mb
-        Box::new(
-            FixedWindowRoller::builder()
-                .build(&log_roll, 10)
-                .unwrap(),
-        ),
+        Box::new(FixedWindowRoller::builder().build(&log_roll, 10).unwrap()),
     );
     let to_file = RollingFileAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{d} - {m}{n}")))
@@ -127,8 +132,8 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             info!("subdomain:     {}", subdomain_name.clone());
             info!("domain:        {}", zone_name.clone());
             let region = match Region::from_str(options.region.as_str()) {
-                    Ok(region) => region,
-                    Err(_) => Region::UsEast1,
+                Ok(region) => region,
+                Err(_) => Region::UsEast1,
             };
             info!("region:        {}", region.name());
             let client = Route53Client::new(region);
