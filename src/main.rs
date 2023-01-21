@@ -1,5 +1,4 @@
 mod cli;
-mod snap;
 
 use std::env;
 use std::net::IpAddr;
@@ -26,6 +25,7 @@ use rusoto_route53::{
     Change, ChangeBatch, ChangeResourceRecordSetsRequest, ListHostedZonesRequest,
     ListResourceRecordSetsRequest, ResourceRecord, ResourceRecordSet, Route53, Route53Client,
 };
+use snapcraft::check_snap_home;
 use tokio::{
     join, select,
     time::{sleep, Duration},
@@ -99,7 +99,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
     if env::var("AWS_SHARED_CREDENTIALS_FILE").is_err() {
         // if we are in a snap, rusoto will fail to read the credentials file from the $HOME/.aws/credential,
         // so set up that path but pointing to the real home rather than the snap home
-        let (in_snap, home) = snap::check_in_snap();
+        let (in_snap, home) = check_snap_home();
         if in_snap {
             if let Some(mut credentials_file) = home {
                 credentials_file.push(".aws");
