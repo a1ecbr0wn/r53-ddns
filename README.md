@@ -28,6 +28,8 @@ The application works gets it's external network address over https from some of
 ## Options
 
 ``` text
+$ r53-ddns -h
+
 Set an Amazon Route 53 DNS record for the server/network
 
 Usage: r53-ddns [OPTIONS]
