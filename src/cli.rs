@@ -11,7 +11,7 @@ pub struct Options {
     #[arg(short, long, value_parser, display_order(1))]
     pub subdomain: Option<String>,
 
-    /// The domain to save the record in  (required)
+    /// The domain to save the record in (required)
     #[arg(short, long, value_parser, display_order(2))]
     pub domain: Option<String>,
 
