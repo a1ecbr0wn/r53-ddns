@@ -66,7 +66,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         .encoder(Box::new(PatternEncoder::new("{m}{n}")))
         .build();
     let rolling_policy = CompoundPolicy::new(
-        Box::new(SizeTrigger::new(1024 * 512 )), // 512kb
+        Box::new(SizeTrigger::new(1024 * 512)), // 512kb
         Box::new(FixedWindowRoller::builder().build(&log_roll, 4).unwrap()),
     );
     let to_file = RollingFileAppender::builder()
