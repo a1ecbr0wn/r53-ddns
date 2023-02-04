@@ -36,4 +36,4 @@ rusoto_core = { version="0.48", default_features=false, features=["rustls"] }
 rusoto_route53 = { version="0.48", default_features=false, features=["rustls"] }
 tokio = { version = "1", features = ["macros"] }
 dirs-next = "2.0.0"
-snapcraft = "0.1.0"
+snapcraft = "0.3.0"
