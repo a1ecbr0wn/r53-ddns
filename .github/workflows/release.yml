@@ -54,7 +54,7 @@ jobs:
         with:
           profile: minimal
           toolchain: ${{ matrix.RUST }}
-          target: ${{ matrix.TARGET }}
+          target: ${{ matrix.TARGET }}x
           override: true
 
       - name: "Test"
