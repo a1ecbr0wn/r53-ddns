@@ -37,19 +37,23 @@ pub struct Options {
     )]
     pub logdir: String,
 
+    /// Script called on error or ip address changes, see: https://r53-ddns.a1ecbr0wn.com/docs/alert-script
+    #[arg(short, long, value_parser, display_order(7))]
+    pub alert_script: Option<String>,
+
+    /// Consecutive check gap in seconds for continuous checking
+    #[arg(short, long, value_parser, display_order(8), default_value_t = 0)]
+    pub check: u64,
+
     /// Verbose logging
-    #[arg(short, long, value_parser, display_order(7), default_value_t = false)]
+    #[arg(short, long, value_parser, default_value_t = false)]
     pub verbose: bool,
 
     /// Debug logging
     #[arg(short = 'D', long, value_parser, hide(true), default_value_t = false)]
     pub debug: bool,
 
-    /// Consecutive check gap in seconds for continuous checking
-    #[arg(short, long, value_parser, display_order(8), default_value_t = 0)]
-    pub check: u64,
-
     /// Print version information
-    #[arg(short = 'V', long, value_parser, display_order(9))]
+    #[arg(short = 'V', long, value_parser)]
     pub version: bool,
 }
