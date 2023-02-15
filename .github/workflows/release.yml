@@ -163,7 +163,7 @@ jobs:
         uses: actions/download-artifact@v3
 
       - name: "Create CLI Release"
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: "marvinpinto/action-automatic-releases@6273874b61ebc8c71f1a61b2d98e234cf389b303"
         with:
           automatic_release_tag: "${{ github.ref_name }}"
           title: "Release ${{ github.ref_name }}"
