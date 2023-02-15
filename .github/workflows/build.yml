@@ -5,25 +5,19 @@ on:
   push:
     branches:
       - '**'
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.yml'
-      - '_includes/*'
-      - 'docs/*'
-      - 'img/*'
-      - 'LICENSE'
-      - 'CNAME'
+    paths:
+      - '**/*.rs'
+      - 'src/*'
+      - 'Cargo.*'
+      - '.github/workflows/build.yml'
   pull_request:
     branches:
       - '**'
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.yml'
-      - '_includes/*'
-      - 'docs/*'
-      - 'img/*'
-      - 'LICENSE'
-      - 'CNAME'
+    paths:
+      - '**/*.rs'
+      - 'src/*'
+      - 'Cargo.*'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * 1'
