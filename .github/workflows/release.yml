@@ -49,14 +49,6 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v2
 
-      - name: "Toolchain setup"
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.RUST }}
-          target: ${{ matrix.TARGET }}x
-          override: true
-
       - name: "Test"
         uses: actions-rs/cargo@v1
         with:
