@@ -136,7 +136,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
                 Err(_) => Region::UsEast1,
             };
             info!("region:        {}", region.name());
-            let client = Route53Client::new(region);
+            let client = Route53Client::new(region.clone());
             let zone_id = get_zone_id(&client, &zone_name).await;
             info!("zone id:       {zone_id}");
 
@@ -157,6 +157,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
                 .await;
             } else {
                 loop {
+                    let client = Route53Client::new(region.clone());
                     ddns_check(
                         &client,
                         &zone_id,
@@ -401,7 +402,7 @@ async fn get_dns_record(
         }
         Err(x) => {
             warn!(
-                "Unable to retrieve the current dns address for {dns_name}  Home={} {x}",
+                "Unable to retrieve the current dns address for {dns_name}: {x} Home={}",
                 env::var("AWS_SHARED_CREDENTIALS_FILE").unwrap()
             );
         }
