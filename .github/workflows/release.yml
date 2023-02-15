@@ -49,14 +49,6 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v2
 
-      - name: "Toolchain setup"
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.RUST }}
-          target: ${{ matrix.TARGET }}x
-          override: true
-
       - name: "Test"
         uses: actions-rs/cargo@v1
         with:
@@ -171,12 +163,9 @@ jobs:
         uses: actions/download-artifact@v3
 
       - name: "Create CLI Release"
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: softprops/action-gh-release@v1
         with:
-          automatic_release_tag: "${{ github.ref_name }}"
-          title: "Release ${{ github.ref_name }}"
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
+          name: "Release ${{ github.ref_name }}"
           files: |
             LICENSE
             **/r53-ddns-*.*
