@@ -7,13 +7,23 @@ on:
       - '**'
     paths-ignore:
       - '**/*.md'
+      - '**/*.yml'
+      - '_includes/*'
+      - 'docs/*'
+      - 'img/*'
       - 'LICENSE'
+      - 'CNAME'
   pull_request:
     branches:
       - '**'
     paths-ignore:
       - '**/*.md'
+      - '**/*.yml'
+      - '_includes/*'
+      - 'docs/*'
+      - 'img/*'
       - 'LICENSE'
+      - 'CNAME'
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * 1'
