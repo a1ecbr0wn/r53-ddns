@@ -190,7 +190,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
             let err_msg = format!("invalid subdomain value: {subdomain_name}");
             warn!("{err_msg}\n");
             if !alert_script.is_empty() {
-                let msg = format!("{{\"type\": \"error\", \"msg\": \"{err_msg}\" }}");
+                let msg = format!("{{ \"type\": \"error\", \"msg\": \"{err_msg}\" }}");
                 let _ = call_alert_script(&alert_script, &msg);
             }
         }
@@ -237,7 +237,7 @@ async fn ddns_check(
                 "{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}"
             );
             if !alert_script.is_empty() {
-                let msg = format!("{{\"type\": \"ip-change\", \"dns\": \"{dns_name}\", \"old\": \"{dns_ip_address}\", \"new\": \"{external_ip_address}\" }}");
+                let msg = format!("{{ \"type\": \"ip-change\", \"dns\": \"{dns_name}\", \"old\": \"{dns_ip_address}\", \"new\": \"{external_ip_address}\" }}");
                 let _ = call_alert_script(alert_script, &msg);
             }
             set_dns_record(
@@ -253,7 +253,7 @@ async fn ddns_check(
     } else if !external_ip_address.is_empty() {
         warn!("{dns_name} ip address is {external_ip_address}");
         if !alert_script.is_empty() {
-            let msg = format!("{{\"type\": \"ip-new\", \"dns\": \"{dns_name}\",  \"new\": \"{external_ip_address}\" }}");
+            let msg = format!("{{ \"type\": \"ip-new\", \"dns\": \"{dns_name}\",  \"new\": \"{external_ip_address}\" }}");
             let _ = call_alert_script(alert_script, &msg);
         }
         set_dns_record(
@@ -452,7 +452,7 @@ async fn get_dns_record(
             );
             warn!("{err_msg}");
             if !alert_script.is_empty() {
-                let msg = format!("{{\"type\": \"error\", \"msg\": \"{err_msg}\" }}");
+                let msg = format!("{{ : \"error\", \"msg\": \"{err_msg}\" }}");
                 let _ = call_alert_script(alert_script, &msg);
             }
         }
