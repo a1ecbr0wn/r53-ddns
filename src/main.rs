@@ -3,6 +3,7 @@ mod cli;
 use std::env;
 use std::net::IpAddr;
 use std::path::Path;
+use std::process::{Command, ExitStatus};
 use std::str::FromStr;
 
 use clap::Parser;
@@ -96,6 +97,19 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         .unwrap();
     let _handle = log4rs::init_config(config).unwrap();
 
+    let alert_script: String = if let Some(alert_script) = options.alert_script {
+        let alert_script_path = Path::new(&alert_script);
+        if alert_script_path.is_file() {
+            alert_script
+        } else {
+            println!("invalid alert script supplied: {alert_script}");
+            "".to_string()
+        }
+    } else {
+        println!("no alert script");
+        "".to_string()
+    };
+
     if env::var("AWS_SHARED_CREDENTIALS_FILE").is_err() {
         // if we are in a snap, rusoto will fail to read the credentials file from the $HOME/.aws/credential,
         // so set up that path but pointing to the real home rather than the snap home
@@ -153,6 +167,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
                     &subdomain_name,
                     &ipaddresses,
                     nat,
+                    &alert_script,
                 )
                 .await;
             } else {
@@ -165,13 +180,19 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
                         &subdomain_name,
                         &ipaddresses,
                         nat,
+                        &alert_script,
                     )
                     .await;
                     sleep(Duration::from_millis(1000 * check_freq)).await;
                 }
             }
         } else {
-            warn!("invalid subdomain value: {subdomain_name}\n");
+            let err_msg = format!("invalid subdomain value: {subdomain_name}");
+            warn!("{err_msg}\n");
+            if ! alert_script.is_empty() {
+                let msg = format!("{{\"type\": \"error\", \"msg\": \"{err_msg}\" }}");
+                let _ = call_alert_script(&alert_script, &msg);
+            }
         }
     } else if options.subdomain.is_some() || options.domain.is_some() {
         println!("r53-ddns v{}\n", DESCRIPTION.as_str());
@@ -194,10 +215,11 @@ async fn ddns_check(
     subdomain_name: &str,
     ipaddresses: &Option<Vec<String>>,
     nat: bool,
+    alert_script: &str
 ) {
     let dns_name = format!("{subdomain_name}{zone_name}");
     let external_ip_future = get_external_ip_address(ipaddresses);
-    let dns_ip_future = get_dns_record(client, zone_id, zone_name, subdomain_name, "A");
+    let dns_ip_future = get_dns_record(client, zone_id, zone_name, subdomain_name, "A", alert_script);
     let (external_ip_address, dns_ip_address) = join!(external_ip_future, dns_ip_future);
     if let Some(dns_ip_address) = dns_ip_address {
         if dns_ip_address != external_ip_address
@@ -207,6 +229,10 @@ async fn ddns_check(
             warn!(
                 "{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}"
             );
+            if ! alert_script.is_empty() {
+                let msg = format!("{{\"type\": \"ip-change\", \"dns\": \"{dns_name}\", \"old\": \"{dns_ip_address}\", \"new\": \"{external_ip_address}\" }}");
+                let _ = call_alert_script(alert_script, &msg);
+            }        
             set_dns_record(
                 client,
                 zone_id,
@@ -219,6 +245,10 @@ async fn ddns_check(
         }
     } else if !external_ip_address.is_empty() {
         warn!("{dns_name} ip address is {external_ip_address}");
+        if ! alert_script.is_empty() {
+            let msg = format!("{{\"type\": \"ip-change\", \"dns\": \"{dns_name}\",  \"old\": \"\", \"new\": \"{external_ip_address}\" }}");
+            let _ = call_alert_script(alert_script, &msg);
+        }        
         set_dns_record(
             client,
             zone_id,
@@ -232,7 +262,7 @@ async fn ddns_check(
     if nat {
         let nat_subdomain_name = "\\052.".to_string() + subdomain_name;
         let dns_nat_cname =
-            get_dns_record(client, zone_id, zone_name, &nat_subdomain_name, "CNAME").await;
+            get_dns_record(client, zone_id, zone_name, &nat_subdomain_name, "CNAME", alert_script).await;
         if dns_nat_cname.is_none()
             || (dns_nat_cname.is_some() && dns_nat_cname.clone().unwrap() != dns_name)
         {
@@ -370,6 +400,7 @@ async fn get_dns_record(
     zone_name: &str,
     subdomain_name: &str,
     record_type: &str,
+    alert_script: &str,
 ) -> Option<String> {
     let dns_name = format!("{subdomain_name}{zone_name}");
     let request = ListResourceRecordSetsRequest {
@@ -401,10 +432,13 @@ async fn get_dns_record(
             debug!("No record for {dns_name} currently set up in Route 53")
         }
         Err(x) => {
-            warn!(
-                "Unable to retrieve the current dns address for {dns_name}: {x} Home={}",
-                env::var("AWS_SHARED_CREDENTIALS_FILE").unwrap()
-            );
+            let err_msg = format!("Unable to retrieve the current dns address for {dns_name}: {x} Home={}",
+                env::var("AWS_SHARED_CREDENTIALS_FILE").unwrap());
+            warn!("{err_msg}");
+            if ! alert_script.is_empty() {
+                let msg = format!("{{\"type\": \"error\", \"msg\": \"{err_msg}\" }}");
+                let _ = call_alert_script(alert_script, &msg);
+            }
         }
     }
     None
@@ -442,4 +476,8 @@ async fn set_dns_record(
 
     // Call the Route53 API to change the resource record sets
     let _response = client.change_resource_record_sets(request).await;
+}
+
+pub fn call_alert_script(script: &str, message: &str) -> std::io::Result<ExitStatus> {
+    Command::new(script).args([message]).spawn()?.wait()
 }
