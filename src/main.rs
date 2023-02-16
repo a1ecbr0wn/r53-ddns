@@ -189,7 +189,7 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         } else {
             let err_msg = format!("invalid subdomain value: {subdomain_name}");
             warn!("{err_msg}\n");
-            if ! alert_script.is_empty() {
+            if !alert_script.is_empty() {
                 let msg = format!("{{\"type\": \"error\", \"msg\": \"{err_msg}\" }}");
                 let _ = call_alert_script(&alert_script, &msg);
             }
@@ -215,11 +215,18 @@ async fn ddns_check(
     subdomain_name: &str,
     ipaddresses: &Option<Vec<String>>,
     nat: bool,
-    alert_script: &str
+    alert_script: &str,
 ) {
     let dns_name = format!("{subdomain_name}{zone_name}");
     let external_ip_future = get_external_ip_address(ipaddresses);
-    let dns_ip_future = get_dns_record(client, zone_id, zone_name, subdomain_name, "A", alert_script);
+    let dns_ip_future = get_dns_record(
+        client,
+        zone_id,
+        zone_name,
+        subdomain_name,
+        "A",
+        alert_script,
+    );
     let (external_ip_address, dns_ip_address) = join!(external_ip_future, dns_ip_future);
     if let Some(dns_ip_address) = dns_ip_address {
         if dns_ip_address != external_ip_address
@@ -229,10 +236,10 @@ async fn ddns_check(
             warn!(
                 "{dns_name} ip address has changed from {dns_ip_address} to {external_ip_address}"
             );
-            if ! alert_script.is_empty() {
+            if !alert_script.is_empty() {
                 let msg = format!("{{\"type\": \"ip-change\", \"dns\": \"{dns_name}\", \"old\": \"{dns_ip_address}\", \"new\": \"{external_ip_address}\" }}");
                 let _ = call_alert_script(alert_script, &msg);
-            }        
+            }
             set_dns_record(
                 client,
                 zone_id,
@@ -245,10 +252,10 @@ async fn ddns_check(
         }
     } else if !external_ip_address.is_empty() {
         warn!("{dns_name} ip address is {external_ip_address}");
-        if ! alert_script.is_empty() {
+        if !alert_script.is_empty() {
             let msg = format!("{{\"type\": \"ip-change\", \"dns\": \"{dns_name}\",  \"old\": \"\", \"new\": \"{external_ip_address}\" }}");
             let _ = call_alert_script(alert_script, &msg);
-        }        
+        }
         set_dns_record(
             client,
             zone_id,
@@ -261,8 +268,15 @@ async fn ddns_check(
     }
     if nat {
         let nat_subdomain_name = "\\052.".to_string() + subdomain_name;
-        let dns_nat_cname =
-            get_dns_record(client, zone_id, zone_name, &nat_subdomain_name, "CNAME", alert_script).await;
+        let dns_nat_cname = get_dns_record(
+            client,
+            zone_id,
+            zone_name,
+            &nat_subdomain_name,
+            "CNAME",
+            alert_script,
+        )
+        .await;
         if dns_nat_cname.is_none()
             || (dns_nat_cname.is_some() && dns_nat_cname.clone().unwrap() != dns_name)
         {
@@ -432,10 +446,12 @@ async fn get_dns_record(
             debug!("No record for {dns_name} currently set up in Route 53")
         }
         Err(x) => {
-            let err_msg = format!("Unable to retrieve the current dns address for {dns_name}: {x} Home={}",
-                env::var("AWS_SHARED_CREDENTIALS_FILE").unwrap());
+            let err_msg = format!(
+                "Unable to retrieve the current dns address for {dns_name}: {x} Home={}",
+                env::var("AWS_SHARED_CREDENTIALS_FILE").unwrap()
+            );
             warn!("{err_msg}");
-            if ! alert_script.is_empty() {
+            if !alert_script.is_empty() {
                 let msg = format!("{{\"type\": \"error\", \"msg\": \"{err_msg}\" }}");
                 let _ = call_alert_script(alert_script, &msg);
             }
