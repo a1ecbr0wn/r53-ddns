@@ -253,7 +253,7 @@ async fn ddns_check(
     } else if !external_ip_address.is_empty() {
         warn!("{dns_name} ip address is {external_ip_address}");
         if !alert_script.is_empty() {
-            let msg = format!("{{\"type\": \"ip-change\", \"dns\": \"{dns_name}\",  \"old\": \"\", \"new\": \"{external_ip_address}\" }}");
+            let msg = format!("{{\"type\": \"ip-new\", \"dns\": \"{dns_name}\",  \"new\": \"{external_ip_address}\" }}");
             let _ = call_alert_script(alert_script, &msg);
         }
         set_dns_record(
