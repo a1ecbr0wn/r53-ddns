@@ -36,12 +36,14 @@ Usage: r53-ddns [OPTIONS]
 
 Options:
   -s, --subdomain <SUBDOMAIN>          The subdomain to save (required)
-  -d, --domain <DOMAIN>                The domain to save the record in  (required)
-  -r, --region <REGION>                The aws region, [default: us-east-1]
+  -d, --domain <DOMAIN>                The domain to save the record in (required)
+  -r, --region <REGION>                The aws region [default: us-east-1]
   -i, --ipaddress-svc <IPADDRESS_SVC>  The ip address services to use, e.g. ident.me,ifconfig.me/ip
   -n, --nat                            The record is a nat router and so a *.<subdomain>.<domain> CNAME record will be set
-  -v, --verbose                        Verbose logging
+  -l, --logdir <LOGDIR>                Absolute path for the directory where log file should be written [default: /var/tmp]
+  -a, --alert-script <ALERT_SCRIPT>    Script called on error or ip address changes, see: https://r53-ddns.a1ecbr0wn.com/docs/alert-script
   -c, --check <CHECK>                  Consecutive check gap in seconds for continuous checking [default: 0]
+  -v, --verbose                        Verbose logging
   -V, --version                        Print version information
   -h, --help                           Print help
 ```
@@ -69,7 +71,7 @@ r53-ddns can be used adhoc if you wish but you probably want to set this up to r
 
 ## Issues
 
-If you are having issues with the execution of this application, start by enabling verbose logging with the `-v` parameter.  If you are trying to debug running this in cron or as a service, logging is enabled by default to `/var/tmp/r53-ddns.log` so that this can be run from any user.
+If you are having issues with the execution of this application, start by enabling verbose logging with the `-v` parameter.  If you are trying to resolve an issue while running this in cron or as a service, logging is enabled by default to the file `/var/tmp/r53-ddns.log` which is a file that should be writable whichever user you are sunning the application under.
 
 If the issues are not obvious or you think there is a bug, please raise an issue via [GitHub](https://github.com/a1ecbr0wn/homebrew-r53-ddns/issues).
 
