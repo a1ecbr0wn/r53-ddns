@@ -6,7 +6,7 @@
 
 ## v1.0.2
 
-- Added the following new parameter for supplying a script that is called when a DNS record is changed or an error is detected.  For further information see: [alert-script](https://r53-ddns.a1ecbr0wn.com/docs/alert-script):
+- Added the following new parameter for supplying a script that is called when a DNS record is changed or an error is detected [#25](https://github.com/a1ecbr0wn/r53-ddns/issues/25).  For further information see: [alert-script](https://r53-ddns.a1ecbr0wn.com/docs/alert-script):
 
 ```text
 -a, --alert-script <ALERT_SCRIPT>
