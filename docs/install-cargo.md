@@ -1,8 +1,12 @@
 ---
+title: Cargo
 layout: default
 nav_order: 3
 parent: Installation
 ---
+<!-- markdownlint-configure-file {
+  "MD025": false
+} -->
 
 # Cargo Installation
 

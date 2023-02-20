@@ -1,8 +1,12 @@
 ---
+title: Homebrew
 layout: default
 nav_order: 1
 parent: Installation
 ---
+<!-- markdownlint-configure-file {
+  "MD025": false
+} -->
 
 # Homebrew Installation
 

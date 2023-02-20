@@ -1,8 +1,12 @@
 ---
+title: Other Package Managers
 layout: default
 nav_order: 4
 parent: Installation
 ---
+<!-- markdownlint-configure-file {
+  "MD025": false
+} -->
 
 # Installation Other package managers
 

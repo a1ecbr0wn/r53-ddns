@@ -1,8 +1,12 @@
 ---
+title: Snap
 layout: default
 nav_order: 2
 parent: Installation
 ---
+<!-- markdownlint-configure-file {
+  "MD025": false
+} -->
 
 # Snapcraft Installation
 
