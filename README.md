@@ -41,7 +41,7 @@ Options:
   -i, --ipaddress-svc <IPADDRESS_SVC>  The ip address services to use, e.g. ident.me,ifconfig.me/ip
   -n, --nat                            The record is a nat router and so a *.<subdomain>.<domain> CNAME record will be set
   -l, --logdir <LOGDIR>                Absolute path for the directory where log file should be written [default: /var/tmp]
-  -a, --alert-script <ALERT_SCRIPT>    Script called on error or ip address changes, see: https://r53-ddns.a1ecbr0wn.com/docs/alert-script
+  -a, --alert-script <ALERT_SCRIPT>    Script called on error or ip address changes, see: https://r53-ddns.a1ecbr0wn.com/alert-script
   -c, --check <CHECK>                  Consecutive check gap in seconds for continuous checking [default: 0]
   -v, --verbose                        Verbose logging
   -V, --version                        Print version information
