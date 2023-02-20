@@ -1,3 +1,9 @@
+---
+layout: default
+nav_order: 3
+parent: Usage
+---
+
 # Setup as a service on MacOS using `launchd`
 
 Create a file called `~/Library/LaunchAgents/r53-ddns.plist` as the current user:

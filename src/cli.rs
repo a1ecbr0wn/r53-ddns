@@ -37,7 +37,7 @@ pub struct Options {
     )]
     pub logdir: String,
 
-    /// Script called on error or ip address changes, see: https://r53-ddns.a1ecbr0wn.com/docs/alert-script
+    /// Script called on error or ip address changes, see: https://r53-ddns.a1ecbr0wn.com/alert-script
     #[arg(short, long, value_parser, display_order(7))]
     pub alert_script: Option<String>,
 
