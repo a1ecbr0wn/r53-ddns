@@ -1,3 +1,9 @@
+---
+layout: default
+nav_order: 1
+parent: Usage
+---
+
 # Setup with cron
 
 The following example is an entry into a cron file that will set up the subdomain `net.example.com`, performing the external ip and dns check every 5 minutes, assuming that the application has been installed via snap:

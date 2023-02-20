@@ -1,3 +1,9 @@
+---
+layout: default
+nav_order: 1
+parent: Usage
+---
+
 # Setup as a service on Linux using `systemd`
 
 Create a file called `/etc/systemd/system/r53-ddns.service` as root.
