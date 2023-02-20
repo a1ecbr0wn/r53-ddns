@@ -11,3 +11,7 @@
 ```text
 -a, --alert-script <ALERT_SCRIPT>
 ```
+
+## v1.0.3
+
+- Documentation URL change
