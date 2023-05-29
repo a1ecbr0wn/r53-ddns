@@ -24,16 +24,16 @@ panic = "abort"
 inherits = "release"
 
 [dependencies]
-clap = { version = "4.1", features = ["derive"] }
+clap = { version = "4.3", features = ["derive"] }
 futures = "0.3"
 lazy_static = "1.4.0"
-log = "0.4.17"
+log = "0.4.18"
 log4rs = "1.2.0"
 rand = "0.8.5"
-regex = "1.7"
+regex = "1.8"
 reqwest = { version = "0.11", default_features=false, features = ["rustls-tls-native-roots"] }
 rusoto_core = { version="0.48", default_features=false, features=["rustls"] }
 rusoto_route53 = { version="0.48", default_features=false, features=["rustls"] }
-tokio = { version = "1.25", features = ["macros"] }
+tokio = { version = "1.28", features = ["macros"] }
 dirs-next = "2.0.0"
 snapcraft = "0.3.0"
