@@ -27,13 +27,13 @@ inherits = "release"
 clap = { version = "4.3", features = ["derive"] }
 futures = "0.3"
 lazy_static = "1.4.0"
-log = "0.4.18"
-log4rs = "1.2.0"
-rand = "0.8.5"
-regex = "1.8"
+log = "0.4"
+log4rs = "1.2"
+rand = "0.8"
+regex = "1"
 reqwest = { version = "0.11", default_features=false, features = ["rustls-tls-native-roots"] }
 rusoto_core = { version="0.48", default_features=false, features=["rustls"] }
 rusoto_route53 = { version="0.48", default_features=false, features=["rustls"] }
-tokio = { version = "1.28", features = ["macros"] }
-dirs-next = "2.0.0"
-snapcraft = "0.3.0"
+tokio = { version = "1", features = ["macros"] }
+dirs-next = "2"
+snapcraft = "0.3"
