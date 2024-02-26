@@ -70,134 +70,143 @@ async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
         Box::new(SizeTrigger::new(1024 * 512)), // 512kb
         Box::new(FixedWindowRoller::builder().build(&log_roll, 4).unwrap()),
     );
-    let to_file = RollingFileAppender::builder()
+    if let Ok(to_file) = RollingFileAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{d} - {m}{n}")))
         .build(&log_file, Box::new(rolling_policy))
-        .unwrap();
-    let console_level = if options.debug {
-        LevelFilter::Debug
-    } else if options.verbose {
-        LevelFilter::Info
-    } else {
-        LevelFilter::Warn
-    };
-    let config = Config::builder()
-        .appender(
-            Appender::builder()
-                .filter(Box::new(ThresholdFilter::new(console_level)))
-                .build("stdout", Box::new(stdout)),
-        )
-        .appender(Appender::builder().build("to_file", Box::new(to_file)))
-        .build(
-            Root::builder()
-                .appender("stdout")
-                .appender("to_file")
-                .build(LevelFilter::Info),
-        )
-        .unwrap();
-    let _handle = log4rs::init_config(config).unwrap();
-
-    let alert_script: String = if let Some(alert_script) = options.alert_script {
-        let alert_script_path = Path::new(&alert_script);
-        if alert_script_path.is_file() {
-            alert_script
+    {
+        let console_level = if options.debug {
+            LevelFilter::Debug
+        } else if options.verbose {
+            LevelFilter::Info
         } else {
-            println!("invalid alert script supplied: {alert_script}");
-            "".to_string()
-        }
-    } else {
-        println!("no alert script");
-        "".to_string()
-    };
+            LevelFilter::Warn
+        };
+        if let Ok(config) = Config::builder()
+            .appender(
+                Appender::builder()
+                    .filter(Box::new(ThresholdFilter::new(console_level)))
+                    .build("stdout", Box::new(stdout)),
+            )
+            .appender(Appender::builder().build("to_file", Box::new(to_file)))
+            .build(
+                Root::builder()
+                    .appender("stdout")
+                    .appender("to_file")
+                    .build(LevelFilter::Info),
+            )
+        {
+            let _handle = log4rs::init_config(config).unwrap();
 
-    if env::var("AWS_SHARED_CREDENTIALS_FILE").is_err() {
-        // if we are in a snap, rusoto will fail to read the credentials file from the $HOME/.aws/credential,
-        // so set up that path but pointing to the real home rather than the snap home
-        let (in_snap, home) = check_snap_home();
-        if in_snap {
-            if let Some(mut credentials_file) = home {
-                credentials_file.push(".aws");
-                credentials_file.push("credentials");
-                if credentials_file.exists() {
-                    env::set_var(
-                        "AWS_SHARED_CREDENTIALS_FILE",
-                        credentials_file.as_path().to_str().unwrap(),
-                    );
-                    debug!(
-                        "within snap, AWS_SHARED_CREDENTIALS_FILE set to {:?}",
-                        credentials_file
-                    );
+            let alert_script: String = if let Some(alert_script) = options.alert_script {
+                let alert_script_path = Path::new(&alert_script);
+                if alert_script_path.is_file() {
+                    alert_script
+                } else {
+                    println!("invalid alert script supplied: {alert_script}");
+                    "".to_string()
                 }
-            }
-        }
-    }
-
-    // Get the options for the ddns check, and run it
-    if options.subdomain.is_some() && options.domain.is_some() {
-        let mut subdomain_name = options.subdomain.unwrap();
-        let mut zone_name = options.domain.unwrap();
-        if is_valid_hostname(&subdomain_name) {
-            if !subdomain_name.ends_with('.') {
-                subdomain_name += ".";
-            }
-            if !zone_name.ends_with('.') {
-                zone_name += ".";
-            }
-            info!("subdomain:     {}", subdomain_name.clone());
-            info!("domain:        {}", zone_name.clone());
-            let region = match Region::from_str(options.region.as_str()) {
-                Ok(region) => region,
-                Err(_) => Region::UsEast1,
-            };
-            info!("region:        {}", region.name());
-            let client = Route53Client::new(region.clone());
-            let zone_id = get_zone_id(&client, &zone_name).await;
-            info!("zone id:       {zone_id}");
-
-            let nat = options.nat;
-            let ipaddresses: Option<Vec<String>> = options
-                .ipaddress_svc
-                .map(|addrs| addrs.split(',').map(|x| x.to_string()).collect());
-
-            if check_freq == 0 {
-                ddns_check(
-                    &client,
-                    &zone_id,
-                    &zone_name,
-                    &subdomain_name,
-                    &ipaddresses,
-                    nat,
-                    &alert_script,
-                )
-                .await;
             } else {
-                loop {
-                    let client = Route53Client::new(region.clone());
-                    ddns_check(
-                        &client,
-                        &zone_id,
-                        &zone_name,
-                        &subdomain_name,
-                        &ipaddresses,
-                        nat,
-                        &alert_script,
-                    )
-                    .await;
-                    sleep(Duration::from_millis(1000 * check_freq)).await;
+                println!("no alert script");
+                "".to_string()
+            };
+
+            if env::var("AWS_SHARED_CREDENTIALS_FILE").is_err() {
+                // if we are in a snap, rusoto will fail to read the credentials file from the $HOME/.aws/credential,
+                // so set up that path but pointing to the real home rather than the snap home
+                let (in_snap, home) = check_snap_home();
+                if in_snap {
+                    if let Some(mut credentials_file) = home {
+                        credentials_file.push(".aws");
+                        credentials_file.push("credentials");
+                        if credentials_file.exists() {
+                            env::set_var(
+                                "AWS_SHARED_CREDENTIALS_FILE",
+                                credentials_file.as_path().to_str().unwrap(),
+                            );
+                            debug!(
+                                "within snap, AWS_SHARED_CREDENTIALS_FILE set to {:?}",
+                                credentials_file
+                            );
+                        }
+                    }
                 }
             }
-        } else {
-            let err_msg = format!("invalid subdomain value: {subdomain_name}");
-            warn!("{err_msg}\n");
-            if !alert_script.is_empty() {
-                let msg = format!("{{ \"type\": \"error\", \"msg\": \"{err_msg}\" }}");
-                let _ = call_alert_script(&alert_script, &msg);
+
+            // Get the options for the ddns check, and run it
+            if options.subdomain.is_some() && options.domain.is_some() {
+                let mut subdomain_name = options.subdomain.unwrap();
+                let mut zone_name = options.domain.unwrap();
+                if is_valid_hostname(&subdomain_name) {
+                    if !subdomain_name.ends_with('.') {
+                        subdomain_name += ".";
+                    }
+                    if !zone_name.ends_with('.') {
+                        zone_name += ".";
+                    }
+                    info!("subdomain:     {}", subdomain_name.clone());
+                    info!("domain:        {}", zone_name.clone());
+                    let region = match Region::from_str(options.region.as_str()) {
+                        Ok(region) => region,
+                        Err(_) => Region::UsEast1,
+                    };
+                    info!("region:        {}", region.name());
+                    let client = Route53Client::new(region.clone());
+                    let zone_id = get_zone_id(&client, &zone_name).await;
+                    info!("zone id:       {zone_id}");
+
+                    let nat = options.nat;
+                    let ipaddresses: Option<Vec<String>> = options
+                        .ipaddress_svc
+                        .map(|addrs| addrs.split(',').map(|x| x.to_string()).collect());
+
+                    if check_freq == 0 {
+                        ddns_check(
+                            &client,
+                            &zone_id,
+                            &zone_name,
+                            &subdomain_name,
+                            &ipaddresses,
+                            nat,
+                            &alert_script,
+                        )
+                        .await;
+                    } else {
+                        loop {
+                            let client = Route53Client::new(region.clone());
+                            ddns_check(
+                                &client,
+                                &zone_id,
+                                &zone_name,
+                                &subdomain_name,
+                                &ipaddresses,
+                                nat,
+                                &alert_script,
+                            )
+                            .await;
+                            sleep(Duration::from_millis(1000 * check_freq)).await;
+                        }
+                    }
+                } else {
+                    let err_msg = format!("invalid subdomain value: {subdomain_name}");
+                    warn!("{err_msg}\n");
+                    if !alert_script.is_empty() {
+                        let msg = format!("{{ \"type\": \"error\", \"msg\": \"{err_msg}\" }}");
+                        let _ = call_alert_script(&alert_script, &msg);
+                    }
+                }
+            } else if options.subdomain.is_some() || options.domain.is_some() {
+                println!("r53-ddns v{}\n", DESCRIPTION.as_str());
+                error!("subdomain and domain parameters need to be supplied together");
+                return Ok(());
             }
+        } else {
+            println!("Failed to create the log4rs configuration");
         }
-    } else if options.subdomain.is_some() || options.domain.is_some() {
-        println!("r53-ddns v{}\n", DESCRIPTION.as_str());
-        error!("subdomain and domain parameters need to be supplied together");
-        return Ok(());
+    } else {
+        println!(
+            "Failed to create the rolling log file appender {}",
+            &log_file
+        );
     }
 
     if options.version {
@@ -321,7 +330,10 @@ async fn get_zone_id(client: &Route53Client, zone_name: &str) -> String {
         if let Ok(response) = client.list_hosted_zones(request).await {
             for zone in response.hosted_zones {
                 if zone.name == zone_name {
-                    let zone_id = zone.id.rsplit_once('/').unwrap().1.to_string();
+                    let zone_id = match zone.id.rsplit_once('/') {
+                        Some(id) => id.1.to_string(),
+                        None => zone.id,
+                    };
                     return zone_id;
                 }
             }
