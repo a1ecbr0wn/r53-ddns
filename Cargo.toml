@@ -1,6 +1,6 @@
 [package]
 name = "r53-ddns"
-version = "1.0.8"
+version = "1.0.9"
 edition = "2021"
 authors = ["Alec Brown <alec@noser.net>"]
 description = "Set an Amazon Route 53 DNS record for the server/network"
@@ -8,7 +8,7 @@ license = "Apache-2.0"
 repository = "https://github.com/a1ecbr0wn/r53-ddns"
 readme = "README.md"
 keywords = ["utility"]
-categories = ["networking"]
+categories = ["network-programming"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
