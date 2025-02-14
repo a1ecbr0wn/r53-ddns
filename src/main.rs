@@ -18,7 +18,7 @@ use log4rs::append::rolling_file::RollingFileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::filter::threshold::ThresholdFilter;
-use rand::seq::SliceRandom;
+use rand::seq::IteratorRandom;
 use regex::Regex;
 use reqwest::Client;
 use rusoto_core::{Region, RusotoError};
@@ -368,18 +368,24 @@ async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
         Some(ipaddresses) => {
             if ipaddresses.len() > 1 {
                 ipaddresses
-                    .choose_multiple(&mut rand::thread_rng(), 2)
+                    .iter()
+                    .choose_multiple(&mut rand::rng(), 2)
+                    .iter()
                     .map(|x| x.to_string())
                     .collect()
             } else {
                 default_ipaddresses
-                    .choose_multiple(&mut rand::thread_rng(), 2)
+                    .iter()
+                    .choose_multiple(&mut rand::rng(), 2)
+                    .iter()
                     .map(|x| x.to_string())
                     .collect()
             }
         }
         None => default_ipaddresses
-            .choose_multiple(&mut rand::thread_rng(), 2)
+            .iter()
+            .choose_multiple(&mut rand::rng(), 2)
+            .iter()
             .map(|x| x.to_string())
             .collect(),
     };
