@@ -66,7 +66,7 @@ jobs:
         run: md5sum --tag r53-ddns-${{ matrix.TARGET }}.tar.gz > r53-ddns-${{ matrix.TARGET }}.md5
 
       - name: Upload the artifact with the workflow run
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: r53-ddns-${{ matrix.TARGET }}-${{ github.ref_name }}
           path: r53-ddns-${{ matrix.TARGET }}.*
@@ -113,7 +113,7 @@ jobs:
         run: md5 r53-ddns-${{ matrix.TARGET }}.tar.gz > r53-ddns-${{ matrix.TARGET }}.md5
 
       - name: Upload the artifact with the workflow run
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: r53-ddns-${{ matrix.TARGET }}-${{ github.ref_name }}
           path: r53-ddns-${{ matrix.TARGET }}.*
