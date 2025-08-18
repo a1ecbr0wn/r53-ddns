@@ -33,7 +33,7 @@ use tokio::{
 };
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<(), RusotoError<RusotoError<()>>> {
+async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
     lazy_static! {
         static ref DESCRIPTION: String = format!(env!("CARGO_PKG_VERSION"));
     };
