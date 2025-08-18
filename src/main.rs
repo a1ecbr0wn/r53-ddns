@@ -124,8 +124,7 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
                                 credentials_file.as_path().to_str().unwrap(),
                             );
                             debug!(
-                                "within snap, AWS_SHARED_CREDENTIALS_FILE set to {:?}",
-                                credentials_file
+                                "within snap, AWS_SHARED_CREDENTIALS_FILE set to {credentials_file:?}",
                             );
                         }
                     }
@@ -399,7 +398,7 @@ async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
         select! {
             response = futures.select_next_some() => {
                 if let Ok((external_ip_address, external_address_svc)) = response {
-                    info!("external ip:   {}  (from {})", external_ip_address, external_address_svc);
+                    info!("external ip:   {external_ip_address}  (from {external_address_svc})");
                     return external_ip_address;
                 }
             }
