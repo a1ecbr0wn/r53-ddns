@@ -167,7 +167,6 @@ jobs:
           files: |
             LICENSE
             **/r53-ddns-*.*
-            RELEASE-NOTES.md
 
   # Kick off the workflow in the tap repo (a1ecbr0wn/homebrew-r53-ddns) that will generate the homebrew formula
   generate-formula:
