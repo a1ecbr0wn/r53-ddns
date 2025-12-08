@@ -73,7 +73,7 @@ commit_parsers = [
     { body = ".*security", group = "<!-- 8 -->🛡️ Security" },
     { message = "^revert", group = "<!-- 9 -->◀️ Revert" },
     { message = "^build", group = "<!-- 10 -->🏗️ Build" },
-    { message = ".*", group = "<!-- 10 -->⚙️ Misc" },
+    { message = ".*", group = "<!-- 11 -->⚙️ Misc" },
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false
