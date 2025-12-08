@@ -352,7 +352,7 @@ async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
     let mut futures = FuturesUnordered::new();
 
     let default_ipaddresses: Vec<String> = [
-        "ident.me",
+        "a.ident.me",
         "ifconfig.me/ip",
         "icanhazip.com",
         "myexternalip.com/raw",
