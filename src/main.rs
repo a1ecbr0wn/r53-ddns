@@ -119,10 +119,11 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
                         credentials_file.push(".aws");
                         credentials_file.push("credentials");
                         if credentials_file.exists() {
-                            env::set_var(
-                                "AWS_SHARED_CREDENTIALS_FILE",
-                                credentials_file.as_path().to_str().unwrap(),
-                            );
+                            if let Some(credentials_file) = credentials_file.as_path().to_str() {
+                                unsafe {
+                                    env::set_var("AWS_SHARED_CREDENTIALS_FILE", credentials_file);
+                                }
+                            }
                             debug!(
                                 "within snap, AWS_SHARED_CREDENTIALS_FILE set to {credentials_file:?}",
                             );
@@ -352,6 +353,7 @@ async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
     let mut futures = FuturesUnordered::new();
 
     let default_ipaddresses: Vec<String> = [
+        "id.a1ecbr0wn.com",
         "a.ident.me",
         "ifconfig.me/ip",
         "icanhazip.com",
@@ -463,9 +465,15 @@ async fn get_dns_record(
             debug!("No record for {dns_name} currently set up in Route 53")
         }
         Err(x) => {
+            let credentials_file =
+                if let Ok(credentials_file) = env::var("AWS_SHARED_CREDENTIALS_FILE") {
+                    credentials_file
+                } else {
+                    "not found".to_string()
+                };
             let err_msg = format!(
                 "Unable to retrieve the current dns address for {dns_name}: {x} Home={}",
-                env::var("AWS_SHARED_CREDENTIALS_FILE").unwrap()
+                credentials_file
             );
             warn!("{err_msg}");
             if !alert_script.is_empty() {
