@@ -1,5 +1,6 @@
 # Build
 Cargo.lock
+CHANGELOG.md
 /target
 
 # IDE
@@ -18,4 +19,4 @@ Cargo.lock
 *.snap
 
 # this is stored is a different repo
-snapcraft.yaml  
+snapcraft.yaml
