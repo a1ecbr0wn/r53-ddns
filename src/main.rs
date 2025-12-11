@@ -111,6 +111,40 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
                 "".to_string()
             };
 
+            if let Ok(config_file) = env::var("AWS_CONFIG_FILE") {
+                let config_file = PathBuf::from(config_file);
+                if config_file.exists() {
+                    info!("config:        {} exists", config_file.display());
+                } else {
+                    info!("config:        {} does not exist", config_file.display());
+                }
+            } else {
+                // if we are in a snap, rusoto will fail to read the credentials file from the $HOME/.aws/credential,
+                // so set up that path but pointing to the real home rather than the snap home
+                let (in_snap, home) = check_snap_home();
+                if in_snap {
+                    if let Some(mut config_file) = home {
+                        config_file.push(".aws");
+                        config_file.push("config");
+                        if config_file.exists() {
+                            if let Some(config_file) = config_file.as_path().to_str() {
+                                unsafe {
+                                    env::set_var("AWS_CONFIG_FILE", config_file);
+                                }
+                            }
+                            info!("config:        {} exists, in snap", config_file.display());
+                        } else {
+                            info!(
+                                "config:        {} does not exist, in snap",
+                                config_file.display()
+                            );
+                        }
+                    }
+                } else {
+                    info!("config:        not set, using default");
+                }
+            }
+
             if let Ok(credentials_file) = env::var("AWS_SHARED_CREDENTIALS_FILE") {
                 let credentials_file = PathBuf::from(credentials_file);
                 if credentials_file.exists() {
@@ -484,6 +518,12 @@ async fn get_dns_record(
             debug!("No record for {dns_name} currently set up in Route 53")
         }
         Err(x) => {
+            let config_file = if let Ok(config_file) = env::var("AWS_CONFIG_FILE") {
+                config_file
+            } else {
+                "not found".to_string()
+            };
+
             let credentials_file =
                 if let Ok(credentials_file) = env::var("AWS_SHARED_CREDENTIALS_FILE") {
                     credentials_file
@@ -491,8 +531,8 @@ async fn get_dns_record(
                     "not found".to_string()
                 };
             let err_msg = format!(
-                "Unable to retrieve the current dns address for {dns_name}: {x} Home={}",
-                credentials_file
+                "Unable to retrieve the current dns address for {dns_name}: {x} aws config={}, credentials={}",
+                config_file, credentials_file
             );
             warn!("{err_msg}");
             if !alert_script.is_empty() {
