@@ -2,7 +2,7 @@ mod cli;
 
 use std::env;
 use std::net::IpAddr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 use std::str::FromStr;
 
@@ -100,17 +100,28 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
             let alert_script: String = if let Some(alert_script) = options.alert_script {
                 let alert_script_path = Path::new(&alert_script);
                 if alert_script_path.is_file() {
+                    info!("alert script:  {alert_script}");
                     alert_script
                 } else {
-                    println!("invalid alert script supplied: {alert_script}");
+                    info!("alert script:  {alert_script} invalid");
                     "".to_string()
                 }
             } else {
-                println!("no alert script");
+                info!("alert script:  not set");
                 "".to_string()
             };
 
-            if env::var("AWS_SHARED_CREDENTIALS_FILE").is_err() {
+            if let Ok(credentials_file) = env::var("AWS_SHARED_CREDENTIALS_FILE") {
+                let credentials_file = PathBuf::from(credentials_file);
+                if credentials_file.exists() {
+                    info!("credentials:   {} exists", credentials_file.display());
+                } else {
+                    info!(
+                        "credentials:   {} does not exist",
+                        credentials_file.display()
+                    );
+                }
+            } else {
                 // if we are in a snap, rusoto will fail to read the credentials file from the $HOME/.aws/credential,
                 // so set up that path but pointing to the real home rather than the snap home
                 let (in_snap, home) = check_snap_home();
@@ -124,11 +135,19 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
                                     env::set_var("AWS_SHARED_CREDENTIALS_FILE", credentials_file);
                                 }
                             }
-                            debug!(
-                                "within snap, AWS_SHARED_CREDENTIALS_FILE set to {credentials_file:?}",
+                            info!(
+                                "credentials:   {} exists, in snap",
+                                credentials_file.display()
+                            );
+                        } else {
+                            info!(
+                                "credentials:   {} does not exist, in snap",
+                                credentials_file.display()
                             );
                         }
                     }
+                } else {
+                    info!("credentials:   not set, using default");
                 }
             }
 
@@ -155,7 +174,7 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
                     info!("zone id:       {zone_id}");
 
                     let nat = options.nat;
-                    let ipaddresses: Option<Vec<String>> = options
+                    let ipaddress_svcs: Option<Vec<String>> = options
                         .ipaddress_svc
                         .map(|addrs| addrs.split(',').map(|x| x.to_string()).collect());
 
@@ -165,7 +184,7 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
                             &zone_id,
                             &zone_name,
                             &subdomain_name,
-                            &ipaddresses,
+                            &ipaddress_svcs,
                             nat,
                             &alert_script,
                         )
@@ -178,7 +197,7 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
                                 &zone_id,
                                 &zone_name,
                                 &subdomain_name,
-                                &ipaddresses,
+                                &ipaddress_svcs,
                                 nat,
                                 &alert_script,
                             )

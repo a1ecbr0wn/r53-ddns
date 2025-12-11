@@ -15,7 +15,5 @@ Snaps are app packages for desktop, cloud and IoT that are easy to install, secu
 To install `r53-ddns` from snap, run the following:
 
 ``` sh
-snap install r53-ddns --channel=candidate
+snap install r53-ddns
 ```
-
-Note: since this is pre-release, this is an install from the release candidate [channel](https://snapcraft.io/docs/channels)
