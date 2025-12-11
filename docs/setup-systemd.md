@@ -8,7 +8,7 @@ parent: Usage
 
 Create a file called `/etc/systemd/system/r53-ddns.service` as root.
 
-``` service
+``` sh
 [Unit]
 Description=R53 DDNS Service
 After=network.target
@@ -48,6 +48,6 @@ systemctl status r53-ddns
 
 Another issue you will find it that the binary snap will not update unless you stop the service.  You might want to consider putting something like this in the crontab of your root user which will keep all of your :
 
-``` cron
+``` sh
 0 0 0 * * service r53-ddns stop && snap refresh r53-ddns && service r53-ddns start
 ```
