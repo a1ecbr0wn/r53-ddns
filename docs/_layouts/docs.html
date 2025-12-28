@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <title>{{ page.title }}</title>
-        <link rel="stylesheet" href="/css/docs.css" />
+        <link rel="stylesheet" href="css/docs.css" />
         {% include head_custom.html %}
     </head>
     <body>
@@ -11,8 +11,12 @@
             <a href="https://www.noser.net">
                 <img src="logo-256.png" class="logo" />
             </a>
-            {% include sidebar.html %} {{ content }} {% include
-            nav_footer_custom.html %}
+            {% include sidebar.html %} {{ content }}
         </div>
     </body>
+    <footer class="site-footer">
+        <a href="https://github.com/a1ecbr0wn/r53-ddns">
+            <i class="fa-brands fa-github"></i>
+        </a>
+    </footer>
 </html>
