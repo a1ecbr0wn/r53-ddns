@@ -1,6 +1,6 @@
 ---
 title: Cargo
-layout: default
+layout: docs
 nav_order: 3
 parent: Installation
 ---

@@ -1,6 +1,6 @@
 ---
 title: Other Package Managers
-layout: default
+layout: docs
 nav_order: 4
 parent: Installation
 ---
