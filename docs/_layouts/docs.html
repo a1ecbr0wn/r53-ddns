@@ -7,11 +7,12 @@
         {% include head_custom.html %}
     </head>
     <body>
+        {% include sidebar.html %}
         <div class="container">
             <a href="https://www.noser.net">
                 <img src="logo-256.png" class="logo" />
             </a>
-            {% include sidebar.html %} {{ content }}
+            {{ content }}
         </div>
     </body>
     <footer class="site-footer">
