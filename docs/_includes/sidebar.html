@@ -1,12 +1,10 @@
-{%- comment -%} Include as: {%- include sidebar.html -%} Depends on: page(?),
-site. Results in: HTML for the side bar. Includes: site_nav.html,
-nav_footer_custom.html Overwrites: nav_footer_custom. Should not be cached,
-because nav_footer_custom.html might depend on page. {%- endcomment -%}
+<script src="sidebar.js"></script>
 
-<div class="side-bar">
+<div id="side-bar" class="side-bar">
     <div class="site-header" role="banner">
         <button
             id="side-bar-button"
+            onClick="toggleSidebar()"
             class="site-button"
             aria-label="Toggle menu"
             aria-pressed="false"
