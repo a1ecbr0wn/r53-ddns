@@ -1,8 +1,6 @@
 ---
 layout: docs
 title: "Setup as a service on MacOS using `launchd` | r53-ddns"
-nav_order: 3
-parent: Usage
 ---
 
 # Setup as a service on MacOS using `launchd`
