@@ -1,17 +1,15 @@
 <script src="sidebar.js"></script>
 
-<div id="side-bar" class="side-bar">
-    <div class="site-header" role="banner">
-        <button
-            id="side-bar-button"
-            onClick="toggleSidebar()"
-            class="side-bar-button"
-            aria-label="Toggle menu"
-            aria-pressed="false"
-        >
-            <i class="fa fa-bars"></i>
-        </button>
-    </div>
-
-    {% include_cached site_nav.html %}
+<div class="site-header" role="banner">
+    <button
+        id="side-bar-button"
+        onClick="toggleSidebar()"
+        class="side-bar-button"
+        aria-label="Toggle menu"
+        aria-pressed="false"
+    >
+        <i class="fa fa-bars"></i>
+    </button>
 </div>
+
+<div id="side-bar" class="side-bar">{% include_cached site_nav.html %}</div>
