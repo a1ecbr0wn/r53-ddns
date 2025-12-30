@@ -1,6 +1,6 @@
 ---
-title: Homebrew
 layout: docs
+title: "Homebrew Installation | r53-ddns"
 nav_order: 1
 parent: Installation
 ---

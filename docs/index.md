@@ -1,6 +1,6 @@
 ---
 layout: docs
-title: R53-DDNS
+title: "r53-ddns Amazon Route 53 DDNS | r53-ddns"
 nav_order: 1
 permalink: /
 ---

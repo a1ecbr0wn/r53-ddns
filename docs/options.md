@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: "Options | r53-ddnsß"
 nav_order: 2
 ---
 

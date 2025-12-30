@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: "Setup as a service on Linux using `systemd` | r53-ddnsß"
 nav_order: 1
 parent: Usage
 ---

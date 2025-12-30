@@ -1,6 +1,6 @@
 ---
-title: Other Package Managers
 layout: docs
+title: "Installation Other package managers | r53-ddns"
 nav_order: 4
 parent: Installation
 ---
