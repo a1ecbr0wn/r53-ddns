@@ -1,6 +1,6 @@
 ---
 layout: docs
-title: Home
+title: R53-DDNS
 nav_order: 1
 permalink: /
 ---
