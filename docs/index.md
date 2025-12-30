@@ -1,8 +1,6 @@
 ---
 layout: docs
 title: "r53-ddns Amazon Route 53 DDNS | r53-ddns"
-nav_order: 1
-permalink: /
 ---
 <!-- markdownlint-configure-file {
   "MD025": false

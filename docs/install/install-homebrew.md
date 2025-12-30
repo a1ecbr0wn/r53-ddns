@@ -1,8 +1,6 @@
 ---
 layout: docs
 title: "Homebrew Installation | r53-ddns"
-nav_order: 1
-parent: Installation
 ---
 <!-- markdownlint-configure-file {
   "MD025": false

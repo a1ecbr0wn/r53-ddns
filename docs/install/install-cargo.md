@@ -1,8 +1,6 @@
 ---
 layout: docs
 title: "Cargo Installation | r53-ddns"
-nav_order: 3
-parent: Installation
 ---
 <!-- markdownlint-configure-file {
   "MD025": false
