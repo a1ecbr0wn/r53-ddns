@@ -1,6 +1,6 @@
 ---
 title: Snap
-layout: default
+layout: docs
 nav_order: 2
 parent: Installation
 ---

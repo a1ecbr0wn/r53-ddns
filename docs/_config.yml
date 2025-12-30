@@ -3,6 +3,9 @@ title: r53-ddns
 description: r53-ddns Amazon Route 53 DDNS
 
 plugins:
+  - jekyll-seo-tag
+  - jekyll-github-metadata
+  - jekyll-include-cache
   - jekyll-default-layout
 
 google_analytics: G-QH0C0YJHW6
