@@ -1,6 +1,6 @@
 ---
 layout: docs
-title: Home
+title: R53-DDNS
 nav_order: 1
 permalink: /
 ---
@@ -26,4 +26,4 @@ This is not is a publicly facing DDNS API, for that I would recomend another rep
 
 ## How it works
 
-The application works gets it's external network address over https from some of the many services that are available online.  The application has a number of these sites set up as default, but you can choose your own by providing a comma separated list of sites using the `-i` parameter.  Many of these service have limits to the frequency that you can call them, so r532-ddns limits each run to check a random two services out of the services available.  The value returned for the ip address is compared to the value that is stored in the Amazon Route 53 DNS settings, and if they differ, the DNS recordmis updated in Route 53.
+The application works gets it's external network address over https from some of the many services that are available online.  The application has a number of these sites set up as default, but you can choose your own by providing a comma separated list of sites using the `-i` parameter.  Many of these service have limits to the frequency that you can call them, so r532-ddns limits each run to check a random two services out of the services available.  The value returned for the ip address is compared to the value that is stored in the Amazon Route 53 DNS settings, and if they differ, the DNS record is updated in Route 53.
