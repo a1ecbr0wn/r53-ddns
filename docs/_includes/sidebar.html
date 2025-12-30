@@ -1,6 +1,6 @@
 <script src="sidebar.js"></script>
 
-<!--<div class="site-header" role="banner">
+<div class="side-bar-header" role="banner">
     <button
         id="side-bar-button"
         onClick="toggleSidebar()"
@@ -10,16 +10,6 @@
     >
         <i class="fa fa-bars"></i>
     </button>
-</div>-->
-
-<button
-    id="side-bar-button"
-    onClick="toggleSidebar()"
-    class="side-bar-button"
-    aria-label="Toggle menu"
-    aria-pressed="false"
->
-    <i class="fa fa-bars"></i>
-</button>
+</div>
 
 <div id="side-bar" class="side-bar">{% include_cached site_nav.html %}</div>
