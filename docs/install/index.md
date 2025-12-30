@@ -1,7 +1,6 @@
 ---
 layout: docs
 title: "Installation | r53-ddns"
-toc: true
 ---
 
 # Installation
@@ -10,5 +9,3 @@ toc: true
 - Linux - [Install with Snap](install-snapcraft)
 - Rust - [Install from source with Cargo](install-cargo)
 - [Other Package Managers](install-other)
-
-{% toc %}
