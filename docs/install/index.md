@@ -1,8 +1,7 @@
 ---
 layout: docs
 title: "Installation | r53-ddns"
-nav_order: 3
-has_children: true
+toc: true
 ---
 
 # Installation
