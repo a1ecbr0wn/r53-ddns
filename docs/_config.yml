@@ -11,7 +11,7 @@ plugins:
 google_analytics: G-QH0C0YJHW6
 
 favicon_ico: "/img/favicon-32.png"
-color_scheme: dark
+app512_ico: "/img/appicon-512.png"
 
 footer_content: '<a href="https://a1ecbr0wn.com"><img alt="a1ecbr0wn" src="https://img.shields.io/badge/a1ecbr0wn-home-brightgreen"></a> <img alt="Crates.io License" src="https://img.shields.io/crates/l/r53-ddns"> <a href="https://snapcraft.io/r53-ddns"><img alt="r53-ddns" src="https://snapcraft.io/r53-ddns/badge.svg" /></a>'
 aux_links:
