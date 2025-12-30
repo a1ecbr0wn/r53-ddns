@@ -36,5 +36,13 @@
                 <span>Contribute</span>
             </a>
         </li>
+        {% for link in site.data.navigation %}
+        <li>
+            <a href="{{ link.url }}">
+                <i class="{{ link.icon }}"></i>
+                <span>{{ link.title }}</span>
+            </a>
+        </li>
+        {% endfor %}
     </ul>
 </nav>
