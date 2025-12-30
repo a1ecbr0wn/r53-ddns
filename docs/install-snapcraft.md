@@ -1,6 +1,6 @@
 ---
-title: Snap
 layout: docs
+title: "Snapcraft Installation | r53-ddnsß"
 nav_order: 2
 parent: Installation
 ---

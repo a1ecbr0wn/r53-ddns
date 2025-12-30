@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: "Contribute | r53-ddns"
 nav_order: 6
 ---
 

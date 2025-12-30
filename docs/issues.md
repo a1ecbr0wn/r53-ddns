@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: "Issues | r53-ddnsß"
 nav_order: 5
 ---
 

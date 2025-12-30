@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: "Setup with cron | r53-ddns"
 nav_order: 1
 parent: Usage
 ---
