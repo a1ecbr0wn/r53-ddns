@@ -1,6 +1,6 @@
 ---
 layout: docs
-title: "Options | r53-ddnsß"
+title: "Options | r53-ddns"
 ---
 
 # Options

@@ -1,6 +1,6 @@
 ---
 layout: docs
-title: "Setup as a service on Linux using `systemd` | r53-ddnsß"
+title: "Setup as a service on Linux using `systemd` | r53-ddns"
 ---
 
 # Setup as a service on Linux using `systemd`

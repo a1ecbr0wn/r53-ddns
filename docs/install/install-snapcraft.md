@@ -1,6 +1,6 @@
 ---
 layout: docs
-title: "Snapcraft Installation | r53-ddnsß"
+title: "Snapcraft Installation | r53-ddns"
 ---
 <!-- markdownlint-configure-file {
   "MD025": false

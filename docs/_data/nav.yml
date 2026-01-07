@@ -2,15 +2,15 @@
   url: /
   icon: "fa-regular fa-house"
 
-- title: Options
-  url: /options
-  icon: "fa-solid fa-gear"
-
 - title: Install
   url: /install
   icon: "fa-solid fa-download"
 
-- title: Usage
+- title: Options
+  url: /options
+  icon: "fa-solid fa-gear"
+
+- title: How to Use
   url: /usage
   icon: "fa-solid fa-circle-check"
 
