@@ -1,0 +1,23 @@
+- title: r53-ddns
+  url: /
+  icon: "fa-regular fa-house"
+
+- title: Install
+  url: /install
+  icon: "fa-solid fa-download"
+
+- title: Options
+  url: /options
+  icon: "fa-solid fa-gear"
+
+- title: How to Use
+  url: /usage
+  icon: "fa-solid fa-circle-check"
+
+- title: Issues
+  url: /issues
+  icon: "fa-solid fa-exclamation-triangle"
+
+- title: Contribute
+  url: /contribute
+  icon: "fa-solid fa-code-pull-request"
