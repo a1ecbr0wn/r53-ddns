@@ -3,9 +3,9 @@ layout: docs
 title: "Options | r53-ddns"
 ---
 
-# Options
+## Options
 
-``` text
+```text
 $ r53-ddns -h
 
 Set an Amazon Route 53 DNS record for the server/network
@@ -26,8 +26,17 @@ Options:
   -h, --help                           Print help
 ```
 
-- To set a DNS record, the application must be provided with the subdomain and domain parameters.
-- If the region for the domain is in a different region to the default `us-east-1`, it needs to be specified with the `-r` parameter.
+- To set a DNS record, the application must be provided with the subdomain and
+  domain parameters.
+- If the region for the domain is in a different region to the default
+  `us-east-1`, it needs to be specified with the `-r` parameter.
 - The default list of ip address https services can be overridden with the `-i` parameter.
-- If the `-n` parameter is supplied, an additional `*.<subdomain>.<domain>` DNS record is set.  This can be used to route traffic to all hosts with that pattern to the network.
-- To get the application to work continuously, the `-c` parameter can be used to pass in the length of the gap in seconds between consecutive checks.  Some of the ip address web servers will return errors if they are called too often, this application tries to address this by randomising the services that are used, but it is recomended that with the default list, the consecutive check gap is not below 300 seconds.
+- If the `-n` parameter is supplied, an additional `*.<subdomain>.<domain>` DNS
+  record is set. This can be used to route traffic to all hosts with that
+  pattern to the network.
+- To get the application to work continuously, the `-c` parameter can be used to
+  pass in the length of the gap in seconds between consecutive checks. Some of
+  the ip address web servers will return errors if they are called too often,
+  this application tries to address this by randomising the services that are
+  used, but it is recomended that with the default list, the consecutive check
+  gap is not below 300 seconds.
