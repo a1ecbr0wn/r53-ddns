@@ -3,11 +3,11 @@ layout: docs
 title: "Setup as a service on MacOS using `launchd` | r53-ddns"
 ---
 
-# Setup as a service on MacOS using `launchd`
+## Setup as a service on MacOS using `launchd`
 
 Create a file called `~/Library/LaunchAgents/r53-ddns.plist` as the current user:
 
-``` xml
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -31,7 +31,7 @@ Set up the AWS credentials file in default location for the current user.
 
 To load and start your service run the folowing:
 
-``` sh
+```sh
 launchctl load ~/Library/LaunchAgents/r53-ddns.plist
 ```
 

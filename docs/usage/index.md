@@ -3,11 +3,13 @@ layout: docs
 title: "How to Use | r53-ddns"
 ---
 
-# How to Use
+## How to Use
 
-`r53-ddns` can be used adhoc if you wish but you probably want to set this up to run continuously in case your external ip address changes.  There are two ways that you can do this, using a job scheduler such as cron or as a service.
+`r53-ddns` can be used adhoc if you wish but you probably want to set this up to
+run continuously in case your external ip address changes. There are two ways
+that you can do this, using a job scheduler such as cron or as a service.
 
-## Setup
+### Setup
 
 - [Setup with cron](setup-cron)
 - [Setup as a service on Linux using `systemd`](setup-systemd)
