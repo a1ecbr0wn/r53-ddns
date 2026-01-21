@@ -1,6 +1,6 @@
+<!--Code snippets go beyond the 80 char limit so stop warning me-->
 <!-- markdownlint-configure-file {
-  "MD033": false,
-  "MD041": false
+  "MD013": false
 } -->
 
 # AWS Route 53 Dynamic DNS
@@ -94,10 +94,10 @@ Options:
 
 ## Installation
 
-- [Homebrew](docs/install-homebrew.md)
-- [Snap](docs/install-snapcraft.md)
-- [Cargo](docs/install-cargo.md)
-- [Other Package Managers](docs/install-other.md)
+- [Homebrew](docs/install/install-homebrew.md)
+- [Snap](docs/install/install-snapcraft.md)
+- [Cargo](docs/install/install-cargo.md)
+- [Other Package Managers](docs/install/install-other.md)
 
 ## Usage
 
@@ -105,9 +105,9 @@ r53-ddns can be used adhoc if you wish, but you probably want to set this up to
 run continuously in case your external ip address changes. There are two ways
 that you can do this, using a job scheduler such as cron or as a service.
 
-- [Setup cron](docs/setup-cron.md)
-- [Setup Systemd Service on Linux](docs/setup-systemd.md)
-- [Setup Launchd Service on MacOS](docs/setup-launchd.md)
+- [Setup cron](docs/usage/setup-cron.md)
+- [Setup Systemd Service on Linux](docs/usage/setup-systemd.md)
+- [Setup Launchd Service on MacOS](docs/usage/setup-launchd.md)
 
 ## Issues
 

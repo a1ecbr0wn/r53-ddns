@@ -3,6 +3,11 @@ layout: docs
 title: "Options | r53-ddns"
 ---
 
+<!--Code snippets go beyond the 80 char limit so stop warning me-->
+<!-- markdownlint-configure-file {
+  "MD013": false
+} -->
+
 ## Options
 
 ```text

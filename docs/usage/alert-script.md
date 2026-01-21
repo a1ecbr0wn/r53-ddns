@@ -15,13 +15,30 @@ following formats:
 
 ### IP Address New
 
-`{ "type": "ip-new", "dns": "host.example.com.", "new": "10.205.309.35" }`
+```json
+{
+  "type": "ip-new",
+  "dns": "host.example.com.",
+  "new": "10.205.309.35"
+}
+```
 
 ### IP Address Change
 
-`{ "type": "ip-change", "dns": "host.example.com.", "old": "10.205.309.34",
-"new": "10.205.309.35" }`
+```json
+{
+  "type": "ip-change",
+  "dns": "host.example.com.",
+  "old": "10.205.309.34",
+  "new": "10.205.309.35"
+}
+```
 
 ### Error
 
-`"{ "type": "error", "msg": "error message..." }"`
+```json
+{
+  "type": "error",
+  "msg": "error message..."
+}
+```

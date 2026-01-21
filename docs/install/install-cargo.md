@@ -2,14 +2,12 @@
 layout: docs
 title: "Cargo Installation | r53-ddns"
 ---
-<!-- markdownlint-configure-file {
-  "MD025": false
-} -->
 
-# Cargo Installation
+## Cargo Installation
 
-A simple way for fellow rust developers to install `r53-ddns` is via the rust tool `cargo`:
+A simple way for fellow rust developers to install `r53-ddns` is via the rust
+tool `cargo`:
 
-``` bash
+```bash
 cargo install r53-ddns
 ```

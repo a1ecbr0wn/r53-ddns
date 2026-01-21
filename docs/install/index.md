@@ -3,7 +3,7 @@ layout: docs
 title: "Installation | r53-ddns"
 ---
 
-# Installation
+## Installation
 
 - MacOS - [Install with Homebrew](install-homebrew)
 - Linux - [Install with Snap](install-snapcraft)
