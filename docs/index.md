@@ -3,10 +3,6 @@ layout: docs
 title: "r53-ddns Amazon Route 53 DDNS | r53-ddns"
 ---
 
-<!-- markdownlint-configure-file {
-  "MD025": false
-} -->
-
 ## AWS Route 53 Dynamic DNS
 
 ### Introduction

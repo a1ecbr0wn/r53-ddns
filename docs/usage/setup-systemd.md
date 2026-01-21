@@ -7,7 +7,7 @@ title: "Setup as a service on Linux using `systemd` | r53-ddns"
 
 Create a file called `/etc/systemd/system/r53-ddns.service` as root.
 
-```sh
+```toml
 [Unit]
 Description=R53 DDNS Service
 After=network.target
