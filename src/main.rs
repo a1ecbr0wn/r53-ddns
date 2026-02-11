@@ -185,34 +185,53 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
                 }
             }
 
-            // Get the options for the ddns check, and run it
-            if options.subdomain.is_some() && options.domain.is_some() {
-                let mut subdomain_name = options.subdomain.unwrap();
-                let mut zone_name = options.domain.unwrap();
-                if is_valid_hostname(&subdomain_name) {
-                    if !subdomain_name.ends_with('.') {
-                        subdomain_name += ".";
-                    }
-                    if !zone_name.ends_with('.') {
-                        zone_name += ".";
-                    }
-                    info!("subdomain:     {}", subdomain_name.clone());
-                    info!("domain:        {}", zone_name.clone());
-                    let region = match Region::from_str(options.region.as_str()) {
-                        Ok(region) => region,
-                        Err(_) => Region::UsEast1,
-                    };
-                    info!("region:        {}", region.name());
-                    let client = Route53Client::new(region.clone());
-                    let zone_id = get_zone_id(&client, &zone_name).await;
-                    info!("zone id:       {zone_id}");
+            let Some(mut subdomain_name) = options.subdomain else {
+                println!("r53-ddns v{}\n", DESCRIPTION.as_str());
+                error!("subdomain and domain parameters need to be supplied together");
+                return Ok(());
+            };
+            let Some(mut zone_name) = options.domain else {
+                println!("r53-ddns v{}\n", DESCRIPTION.as_str());
+                error!("subdomain and domain parameters need to be supplied together");
+                return Ok(());
+            };
+            if is_valid_hostname(&subdomain_name) {
+                if !subdomain_name.ends_with('.') {
+                    subdomain_name += ".";
+                }
+                if !zone_name.ends_with('.') {
+                    zone_name += ".";
+                }
+                info!("subdomain:     {}", subdomain_name.clone());
+                info!("domain:        {}", zone_name.clone());
+                let region = match Region::from_str(options.region.as_str()) {
+                    Ok(region) => region,
+                    Err(_) => Region::UsEast1,
+                };
+                info!("region:        {}", region.name());
+                let client = Route53Client::new(region.clone());
+                let zone_id = get_zone_id(&client, &zone_name).await;
+                info!("zone id:       {zone_id}");
 
-                    let nat = options.nat;
-                    let ipaddress_svcs: Option<Vec<String>> = options
-                        .ipaddress_svc
-                        .map(|addrs| addrs.split(',').map(|x| x.to_string()).collect());
+                let nat = options.nat;
+                let ipaddress_svcs: Option<Vec<String>> = options
+                    .ipaddress_svc
+                    .map(|addrs| addrs.split(',').map(|x| x.to_string()).collect());
 
-                    if check_freq == 0 {
+                if check_freq == 0 {
+                    ddns_check(
+                        &client,
+                        &zone_id,
+                        &zone_name,
+                        &subdomain_name,
+                        &ipaddress_svcs,
+                        nat,
+                        &alert_script,
+                    )
+                    .await;
+                } else {
+                    loop {
+                        let client = Route53Client::new(region.clone());
                         ddns_check(
                             &client,
                             &zone_id,
@@ -223,34 +242,16 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
                             &alert_script,
                         )
                         .await;
-                    } else {
-                        loop {
-                            let client = Route53Client::new(region.clone());
-                            ddns_check(
-                                &client,
-                                &zone_id,
-                                &zone_name,
-                                &subdomain_name,
-                                &ipaddress_svcs,
-                                nat,
-                                &alert_script,
-                            )
-                            .await;
-                            sleep(Duration::from_millis(1000 * check_freq)).await;
-                        }
-                    }
-                } else {
-                    let err_msg = format!("invalid subdomain value: {subdomain_name}");
-                    warn!("{err_msg}\n");
-                    if !alert_script.is_empty() {
-                        let msg = format!("{{ \"type\": \"error\", \"msg\": \"{err_msg}\" }}");
-                        let _ = call_alert_script(&alert_script, &msg);
+                        sleep(Duration::from_millis(1000 * check_freq)).await;
                     }
                 }
-            } else if options.subdomain.is_some() || options.domain.is_some() {
-                println!("r53-ddns v{}\n", DESCRIPTION.as_str());
-                error!("subdomain and domain parameters need to be supplied together");
-                return Ok(());
+            } else {
+                let err_msg = format!("invalid subdomain value: {subdomain_name}");
+                warn!("{err_msg}\n");
+                if !alert_script.is_empty() {
+                    let msg = format!("{{ \"type\": \"error\", \"msg\": \"{err_msg}\" }}");
+                    let _ = call_alert_script(&alert_script, &msg);
+                }
             }
         } else {
             println!("Failed to create the log4rs configuration");
@@ -423,14 +424,14 @@ async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
             if ipaddresses.len() > 1 {
                 ipaddresses
                     .iter()
-                    .choose_multiple(&mut rand::rng(), 2)
+                    .sample(&mut rand::rng(), 2)
                     .iter()
                     .map(|x| x.to_string())
                     .collect()
             } else {
                 default_ipaddresses
                     .iter()
-                    .choose_multiple(&mut rand::rng(), 2)
+                    .sample(&mut rand::rng(), 2)
                     .iter()
                     .map(|x| x.to_string())
                     .collect()
@@ -438,7 +439,7 @@ async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
         }
         None => default_ipaddresses
             .iter()
-            .choose_multiple(&mut rand::rng(), 2)
+            .sample(&mut rand::rng(), 2)
             .iter()
             .map(|x| x.to_string())
             .collect(),
