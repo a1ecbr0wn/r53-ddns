@@ -270,6 +270,17 @@ async fn main() -> Result<(), Box<RusotoError<RusotoError<()>>>> {
     Ok(())
 }
 
+/// Checks the current external IP address against the Route 53 DNS record and
+/// updates the record if they differ. Also sets a wildcard CNAME if `nat` is
+/// enabled.
+///
+/// - `client`        - authenticated Route 53 client
+/// - `zone_id`       - the Route 53 hosted zone ID
+/// - `zone_name`     - the domain name of the hosted zone, e.g. `example.com.`
+/// - `subdomain_name` - the subdomain to update, e.g. `home.`
+/// - `ipaddresses`   - override list of IP-detection service hostnames; uses the built-in list when `None`
+/// - `nat`           - when true, also upserts a `*.<subdomain>.<zone>` CNAME pointing at the A record
+/// - `alert_script`  - path to a script invoked on IP change or error; skipped when empty
 async fn ddns_check(
     client: &Route53Client,
     zone_id: &str,
@@ -356,7 +367,10 @@ async fn ddns_check(
     }
 }
 
-/// This function checks to see whether the subdomain_name entered into the zone and cname tags is a valid subdomain_name.
+/// Returns `true` if `subdomain_name` is a valid DNS hostname (max 255 chars,
+/// each label max 63 chars, alphanumeric and hyphens only).
+///
+/// - `subdomain_name` - the hostname string to validate
 fn is_valid_hostname(subdomain_name: &str) -> bool {
     if subdomain_name.len() > 255 {
         return false;
@@ -370,7 +384,11 @@ fn is_valid_hostname(subdomain_name: &str) -> bool {
     true
 }
 
-/// Returns the zone id for a given zone name
+/// Returns the Route 53 hosted zone ID for the given zone name, or an empty
+/// string if the zone is not found or the request fails.
+///
+/// - `client`    - authenticated Route 53 client
+/// - `zone_name` - the fully-qualified domain name of the zone, e.g. `example.com.`
 async fn get_zone_id(client: &Route53Client, zone_name: &str) -> String {
     let mut next_marker: Option<String> = None;
     loop {
@@ -401,7 +419,12 @@ async fn get_zone_id(client: &Route53Client, zone_name: &str) -> String {
     }
 }
 
-/// Get the external ip address from an external service
+/// Returns the current external IP address by querying two randomly selected
+/// IP-detection services in parallel and returning the first valid response.
+/// Returns an empty string if no service responds with a valid IP address.
+///
+/// - `ipaddresses` - override list of service hostnames (e.g. `ifconfig.me/ip`);
+///                   falls back to the built-in list when `None` or fewer than two entries
 async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
     let mut futures = FuturesUnordered::new();
 
@@ -462,6 +485,11 @@ async fn get_external_ip_address(ipaddresses: &Option<Vec<String>>) -> String {
     "".to_string()
 }
 
+/// Fetches the response from an IP-detection service over HTTPS and returns
+/// the IP address string paired with the service hostname. Returns `Err` if
+/// the request fails or the response is not a valid IP address.
+///
+/// - `address` - the service hostname and optional path, e.g. `ifconfig.me/ip`
 async fn get_http_resp(address: String) -> Result<(String, String), ()> {
     let client = Client::new();
     if let Ok(resp) = client.get(format!("https://{address}")).send().await {
@@ -479,7 +507,51 @@ async fn get_http_resp(address: String) -> Result<(String, String), ()> {
 // Amazon Route 53 Interaction
 //////////////////////////////
 
-/// Lists the ip address of a given zone/host A record
+/// Extracts the text content of the first matching XML element.
+///
+/// - `xml` - the XML string to search
+/// - `tag` - the element name to look for, without angle brackets
+fn xml_text<'a>(xml: &'a str, tag: &str) -> Option<&'a str> {
+    let open = format!("<{tag}>");
+    let close = format!("</{tag}>");
+    let start = xml.find(open.as_str())? + open.len();
+    let end = xml[start..].find(close.as_str())? + start;
+    Some(&xml[start..end])
+}
+
+/// Formats a `RusotoError` into a human-readable string, extracting the
+/// `<Code>` and `<Message>` fields from the XML body when available rather
+/// than forwarding the raw response.
+///
+/// - `err` - the error returned by a Rusoto API call
+fn format_aws_error<E: std::fmt::Debug>(err: &RusotoError<E>) -> String {
+    match err {
+        RusotoError::Unknown(resp) => {
+            let body = String::from_utf8_lossy(&resp.body);
+            let body_str = body.as_ref();
+            let code = xml_text(body_str, "Code").unwrap_or("Unknown");
+            let message = xml_text(body_str, "Message").unwrap_or_else(|| body_str.trim());
+            format!("AWS error [{}]: {}", code, message)
+        }
+        RusotoError::Credentials(e) => format!("AWS credentials error: {}", e),
+        RusotoError::HttpDispatch(e) => format!("AWS HTTP error: {}", e),
+        RusotoError::Validation(msg) => format!("AWS validation error: {}", msg),
+        RusotoError::ParseError(msg) => format!("AWS parse error: {}", msg),
+        RusotoError::Service(e) => format!("AWS service error: {:?}", e),
+        _ => format!("{:?}", err),
+    }
+}
+
+/// Returns the current value of a Route 53 DNS record, or `None` if the record
+/// does not exist or the request fails. Errors are logged and forwarded to the
+/// alert script.
+///
+/// - `client`        - authenticated Route 53 client
+/// - `zone_id`       - the Route 53 hosted zone ID
+/// - `zone_name`     - the fully-qualified domain name of the zone, e.g. `example.com.`
+/// - `subdomain_name` - the subdomain to look up, e.g. `home.`
+/// - `record_type`   - the DNS record type, e.g. `A` or `CNAME`
+/// - `alert_script`  - path to a script invoked on error; skipped when empty
 async fn get_dns_record(
     client: &Route53Client,
     zone_id: &str,
@@ -518,25 +590,17 @@ async fn get_dns_record(
             debug!("No record for {dns_name} currently set up in Route 53")
         }
         Err(x) => {
-            let config_file = if let Ok(config_file) = env::var("AWS_CONFIG_FILE") {
-                config_file
-            } else {
-                "not found".to_string()
-            };
-
-            let credentials_file =
-                if let Ok(credentials_file) = env::var("AWS_SHARED_CREDENTIALS_FILE") {
-                    credentials_file
-                } else {
-                    "not found".to_string()
-                };
+            let config_file = env::var("AWS_CONFIG_FILE")
+                .unwrap_or_else(|_| "not found".to_string());
+            let credentials_file = env::var("AWS_SHARED_CREDENTIALS_FILE")
+                .unwrap_or_else(|_| "not found".to_string());
+            let aws_err = format_aws_error(&x);
             let err_msg = format!(
-                "Unable to retrieve the current dns address for {dns_name}: {x} aws config={}, credentials={}",
-                config_file, credentials_file
+                "Unable to retrieve the current dns address for {dns_name}: {aws_err} (aws config={config_file}, credentials={credentials_file})"
             );
             warn!("{err_msg}");
             if !alert_script.is_empty() {
-                let msg = format!("{{ : \"error\", \"msg\": \"{err_msg}\" }}");
+                let msg = format!("{{ \"type\": \"error\", \"msg\": \"{aws_err}\" }}");
                 let _ = call_alert_script(alert_script, &msg);
             }
         }
@@ -544,7 +608,15 @@ async fn get_dns_record(
     None
 }
 
-/// Creates resource records in the given hosted zone
+/// Inserts a DNS record in the given Route 53 hosted zone with a TTL of 300
+/// seconds.
+///
+/// - `client`        - authenticated Route 53 client
+/// - `zone_id`       - the Route 53 hosted zone ID
+/// - `zone_name`     - the fully-qualified domain name of the zone, e.g. `example.com.`
+/// - `subdomain_name` - the subdomain to write, e.g. `home.`
+/// - `record_type`   - the DNS record type, e.g. `A` or `CNAME`
+/// - `record_value`  - the value to set, e.g. an IP address or target hostname
 async fn set_dns_record(
     client: &Route53Client,
     zone_id: &str,
@@ -578,6 +650,11 @@ async fn set_dns_record(
     let _response = client.change_resource_record_sets(request).await;
 }
 
+/// Invokes an alert script with a JSON message as its sole argument and waits
+/// for it to exit.
+///
+/// - `script`  - path to the executable script
+/// - `message` - JSON string passed as the first argument to the script
 pub fn call_alert_script(script: &str, message: &str) -> std::io::Result<ExitStatus> {
     Command::new(script).args([message]).spawn()?.wait()
 }
