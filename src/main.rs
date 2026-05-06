@@ -590,10 +590,10 @@ async fn get_dns_record(
             debug!("No record for {dns_name} currently set up in Route 53")
         }
         Err(x) => {
-            let config_file = env::var("AWS_CONFIG_FILE")
-                .unwrap_or_else(|_| "not found".to_string());
-            let credentials_file = env::var("AWS_SHARED_CREDENTIALS_FILE")
-                .unwrap_or_else(|_| "not found".to_string());
+            let config_file =
+                env::var("AWS_CONFIG_FILE").unwrap_or_else(|_| "not found".to_string());
+            let credentials_file =
+                env::var("AWS_SHARED_CREDENTIALS_FILE").unwrap_or_else(|_| "not found".to_string());
             let aws_err = format_aws_error(&x);
             let err_msg = format!(
                 "Unable to retrieve the current dns address for {dns_name}: {aws_err} (aws config={config_file}, credentials={credentials_file})"
